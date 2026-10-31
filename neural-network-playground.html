@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Inside a Neural Network | Kalyani Guggilla</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A visual presentation on neural network components (layers, neurons, weights, activation functions, loss functions, optimizers) built from experiments in the TensorFlow Neural Network Playground. By Kalyani Guggilla.">
+<style>
+  /* Layout: a vertical deck of snap-scrolling slides, one idea per slide, using the portfolio's own tokens.
+     Playground convention kept throughout: teal = positive weight / class, orange = negative. */
+  :root{
+    --bg:#ffffff; --bg-soft:#f6f7f9; --bg-card:#ffffff;
+    --ink:#14181d; --ink-soft:#4a545f; --ink-faint:#77828e; --line:#e2e6eb;
+    --accent:#0f5c72; --accent-soft:#e6f1f4; --accent-ink:#0f5c72;
+    --neg:#b8561a; --neg-soft:#fbefe6;
+    --shadow:0 1px 2px rgba(16,24,32,.05), 0 8px 24px rgba(16,24,32,.05);
+    --radius:12px; --maxw:1080px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1216; --bg-soft:#151a20; --bg-card:#161b22;
+      --ink:#e8edf2; --ink-soft:#a9b4c0; --ink-faint:#7e8b98; --line:#252c35;
+      --accent:#5fc2dc; --accent-soft:#12262d; --accent-ink:#8fd8ee;
+      --neg:#f0a35e; --neg-soft:#2b1d12;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1216; --bg-soft:#151a20; --bg-card:#161b22;
+    --ink:#e8edf2; --ink-soft:#a9b4c0; --ink-faint:#7e8b98; --line:#252c35;
+    --accent:#5fc2dc; --accent-soft:#12262d; --accent-ink:#8fd8ee;
+    --neg:#f0a35e; --neg-soft:#2b1d12;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html{scroll-snap-type:y proximity;scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+  body{margin:0;background:var(--bg-soft);color:var(--ink);font:16px/1.6 var(--font);-webkit-font-smoothing:antialiased}
+  a{color:var(--accent-ink);text-decoration:none}
+  a:hover{text-decoration:underline}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}
+  nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:color-mix(in srgb,var(--bg) 94%,transparent);
+      backdrop-filter:saturate(160%) blur(10px);border-bottom:1px solid var(--line)}
+  .nav-inner{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;height:58px;
+      padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .brand{font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+  .nav-right{display:flex;align-items:center;gap:14px;font-size:14px}
+  .counter{color:var(--ink-faint);font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:13px}
+  .navbtn{border:1px solid var(--line);background:var(--bg-card);color:var(--ink);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px}
+  .navbtn:hover{border-color:var(--accent);color:var(--accent-ink)}
+  .back{color:var(--ink-soft);font-weight:500}
+  @media (max-width:560px){ .back span{display:none} }
+
+  main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+  .slide{scroll-snap-align:start;scroll-margin-top:calc(70px + env(safe-area-inset-top,0px));
+      max-width:var(--maxw);margin:0 auto 22px;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);
+      box-shadow:var(--shadow);padding:clamp(22px,4vw,44px);min-height:min(620px,calc(100vh - 110px));display:flex;flex-direction:column;gap:18px}
+  .eyebrow{display:flex;justify-content:space-between;gap:12px;font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--accent-ink)}
+  .eyebrow .num{color:var(--ink-faint);font-family:var(--mono);letter-spacing:.02em;font-weight:500}
+  h1,h2,h3{text-wrap:balance;margin:0;letter-spacing:-.02em;line-height:1.15}
+  h1{font-size:clamp(32px,5.4vw,54px);font-weight:750}
+  h2{font-size:clamp(24px,3.4vw,34px);font-weight:720}
+  h3{font-size:17px;font-weight:650;letter-spacing:-.01em}
+  p{margin:0;max-width:68ch;color:var(--ink-soft)}
+  .lede{font-size:clamp(16px,1.9vw,19px);color:var(--ink-soft);max-width:60ch}
+  .grid{display:grid;gap:22px}
+  .two{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:center}
+  .three{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .four{grid-template-columns:repeat(4,minmax(0,1fr))}
+  @media (max-width:860px){ .two,.three{grid-template-columns:minmax(0,1fr)} .four{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  .def{border-left:3px solid var(--accent);padding:4px 0 4px 16px}
+  .def b{color:var(--ink)}
+  ul.points{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+  ul.points li{position:relative;padding-left:20px;color:var(--ink-soft);max-width:66ch}
+  ul.points li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  ul.points b{color:var(--ink);font-weight:620}
+  .tile{background:var(--bg-soft);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+  .tile p{font-size:14.5px}
+  .tag{font-family:var(--mono);font-size:12px;color:var(--ink-faint)}
+  .playground{margin-top:auto;font-size:14px;background:var(--accent-soft);color:var(--ink);border-radius:10px;padding:12px 16px;max-width:none}
+  .playground b{color:var(--accent-ink)}
+  .fig{width:100%;overflow-x:auto}
+  .fig svg{display:block;width:100%;height:auto;min-width:520px}
+  .fig.small svg{min-width:0}
+  svg text{font-family:var(--font);fill:var(--ink-soft)}
+  .mono{font-family:var(--mono)}
+  .formula{font-family:var(--mono);font-size:14px;background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:10px 14px;color:var(--ink);overflow-x:auto;white-space:nowrap}
+  table{border-collapse:collapse;width:100%;font-size:14px;min-width:640px}
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;background:var(--bg-soft)}
+  tr:last-child td{border-bottom:0}
+  td:first-child{font-weight:620;color:var(--ink);white-space:nowrap}
+  td{color:var(--ink-soft)}
+  .chip{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:1px 9px;white-space:nowrap}
+  .lo{background:var(--accent-soft);color:var(--accent-ink)}
+  .hi{background:var(--neg-soft);color:var(--neg)}
+  .title-slide{justify-content:center}
+  .meta-row{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:14px;color:var(--ink-faint)}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--ink-soft)}
+  .sw{display:inline-block;width:18px;height:4px;border-radius:2px;vertical-align:middle;margin-right:6px}
+  .cite{color:var(--ink-faint);font-size:.92em;white-space:nowrap}
+  ol.refs{margin:0;padding:0;list-style:none;display:grid;gap:12px;font-size:14.5px}
+  ol.refs li{padding-left:2em;text-indent:-2em;color:var(--ink-soft);max-width:none;overflow-wrap:anywhere}
+  ol.refs i{color:var(--ink)}
+  figure.shot{margin:0;display:grid;gap:10px}
+  figure.shot img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:10px}
+  figure.shot figcaption{font-size:14px;color:var(--ink-soft);max-width:none}
+  figure.shot b{color:var(--ink)}
+  footer{max-width:var(--maxw);margin:0 auto;color:var(--ink-faint);font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a class="brand" href="./">Kalyani Guggilla</a>
+    <div class="nav-right">
+      <span class="counter" id="counter">01 / 12</span>
+      <button class="navbtn" id="prev" aria-label="Previous slide">&uarr;</button>
+      <button class="navbtn" id="next" aria-label="Next slide">&darr;</button>
+      <a class="back" href="./#projects">&larr; <span>Portfolio</span></a>
+    </div>
+  </div>
+</nav>
+
+<main>
+
+<!-- 1 TITLE -->
+<section class="slide title-slide" id="s1">
+  <div class="eyebrow"><span>AI &amp; Machine Learning &middot; Visual Presentation</span><span class="num">01</span></div>
+  <h1>Inside a Neural Network</h1>
+  <p class="lede">What the TensorFlow Neural Network Playground taught me about layers, neurons, weights, activation functions, loss functions and optimizers, and why seeing a network train makes each of them easier to understand.</p>
+  <div class="fig small" aria-hidden="true"><svg id="heroNet" viewBox="0 0 900 170"></svg></div>
+  <div class="meta-row"><span>Kalyani Guggilla</span><span>M.S. Artificial Intelligence, Indiana Wesleyan University</span><span>Tool: <a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">playground.tensorflow.org</a></span></div>
+  <p class="tag">Use the arrows at the top, the &uarr; &darr; keys, or just scroll.</p>
+</section>
+
+<!-- 2 EXPERIMENT -->
+<section class="slide" id="s2">
+  <div class="eyebrow"><span>The exercise</span><span class="num">02</span></div>
+  <h2>The Playground: one controlled experiment at a time</h2>
+  <p class="lede">The Playground trains a small network in the browser on two-dimensional points that belong to one of two classes <span class="cite">(Smilkov et al., 2017)</span>. I changed one control at a time and watched training time, model complexity and test loss.</p>
+  <div class="grid four">
+    <div class="tile"><span class="tag">DATA</span><h3>Data type</h3><p>Circle, exclusive-or (XOR), two Gaussian clusters, and the spiral. Each needs a different shape of decision boundary.</p></div>
+    <div class="tile"><span class="tag">DATA</span><h3>Noise &amp; split</h3><p>Noise from 0 to 50 blurs the class boundary. The train/test ratio decides how many points the model never sees.</p></div>
+    <div class="tile"><span class="tag">INPUT</span><h3>Features</h3><p>X&#8321;, X&#8322; and engineered inputs: X&#8321;&sup2;, X&#8322;&sup2;, X&#8321;X&#8322;, sin(X&#8321;), sin(X&#8322;).</p></div>
+    <div class="tile"><span class="tag">MODEL</span><h3>Architecture &amp; training</h3><p>Hidden layers (0&ndash;6), neurons per layer (1&ndash;8), activation, learning rate, regularization, batch size.</p></div>
+  </div>
+  <figure class="shot">
+    <img src="nn-playground-run-circle.jpg" alt="My Playground run: circle dataset, inputs X1 and X2, two hidden layers of 6 and 2 neurons, tanh activation, learning rate 1, test loss 0.034 and training loss 0.000 at epoch 397." loading="lazy">
+    <figcaption><b>My run:</b> circle data, X&#8321; and X&#8322; only, hidden layers of 6 and 2 neurons, tanh, learning rate 1, noise 0. At epoch 397 the test loss was 0.034 and the training loss 0.000. The blue region has straight edges because each first-layer neuron draws one line and the network stitches them into a closed shape. The early spikes in the loss curve come from the high learning rate.</figcaption>
+  </figure>
+  <p class="playground"><b>What the screen shows:</b> line color and thickness on every connection are the weights, the small image in each neuron is what that neuron has learned, and the output panel plots test and training loss as epochs tick up.</p>
+</section>
+
+<!-- 3 ARCHITECTURE -->
+<section class="slide" id="s3">
+  <div class="eyebrow"><span>Structure</span><span class="num">03</span></div>
+  <h2>How data flows through a network</h2>
+  <p>Data moves forward from the input layer through the hidden layers to the output, where the prediction is scored by the loss function. The error then flows backward (backpropagation), and the optimizer adjusts every weight <span class="cite">(Rumelhart et al., 1986)</span>. One forward pass plus one backward pass over a batch is one training step.</p>
+  <div class="fig"><svg id="archNet" viewBox="0 0 960 420" role="img" aria-label="Diagram of a network with three input features, two hidden layers of four and three neurons, and one output, followed by a loss function, with a backpropagation arrow returning to the weights."></svg></div>
+  <div class="legend"><span><i class="sw" style="background:var(--accent)"></i>positive weight</span><span><i class="sw" style="background:var(--neg)"></i>negative weight</span><span>line thickness = weight size</span><span><i class="sw" style="background:var(--ink-faint)"></i>backward pass: gradients</span></div>
+</section>
+
+<!-- 4 LAYERS -->
+<section class="slide" id="s4">
+  <div class="eyebrow"><span>Component 1 of 6</span><span class="num">04</span></div>
+  <h2>Layers</h2>
+  <div class="grid two">
+    <div class="grid" style="gap:16px">
+      <p class="def"><b>A layer is a group of neurons that all receive the same inputs and pass their outputs on together.</b> Each layer transforms its input into a new representation for the next one <span class="cite">(LeCun et al., 2015)</span>.</p>
+      <ul class="points">
+        <li><b>Input layer</b> holds the raw features. It does no computation; it hands the values to the network.</li>
+        <li><b>Hidden layers</b> learn intermediate features. Early layers find simple boundaries; later layers combine them into curves and regions.</li>
+        <li><b>Output layer</b> produces the prediction: here, one value whose sign picks the class.</li>
+        <li><b>Depth</b> (number of layers) adds composition. Width (neurons per layer) adds capacity at each step.</li>
+      </ul>
+    </div>
+    <div class="fig small"><svg id="layerFig" viewBox="0 0 420 300" role="img" aria-label="Three stacked boxes: input layer, hidden layers, output layer, each showing what it represents."></svg></div>
+  </div>
+  <p class="playground"><b>In the Playground:</b> with zero hidden layers the network can only draw a straight line, so it fails on circle and XOR. Adding one hidden layer of four neurons let it bend the boundary.</p>
+</section>
+
+<!-- 5 NEURONS -->
+<section class="slide" id="s5">
+  <div class="eyebrow"><span>Component 2 of 6</span><span class="num">05</span></div>
+  <h2>Neurons</h2>
+  <div class="grid two">
+    <div class="fig small"><svg id="neuronFig" viewBox="0 0 460 280" role="img" aria-label="A single neuron: three inputs multiplied by weights, summed with a bias, passed through an activation function to produce an output."></svg></div>
+    <div class="grid" style="gap:16px">
+      <p class="def"><b>A neuron is the basic unit of computation.</b> It multiplies each input by a weight, adds a bias, and passes the sum through an activation function <span class="cite">(Goodfellow et al., 2016)</span>.</p>
+      <div class="formula">output = f( w&#8321;x&#8321; + w&#8322;x&#8322; + w&#8323;x&#8323; + b )</div>
+      <ul class="points">
+        <li>A single neuron draws one boundary: a line in 2-D.</li>
+        <li>Several neurons in a layer draw several lines; the next layer combines them into shapes.</li>
+        <li>Too few neurons underfit. Too many can memorize noise.</li>
+      </ul>
+    </div>
+  </div>
+  <figure class="shot">
+    <img src="nn-playground-run-1neuron.jpg" alt="My Playground run: circle dataset with only 1 neuron in the first hidden layer. The boundary is a single straight line; test loss 0.446 and training loss 0.394 at epoch 311." loading="lazy">
+    <figcaption><b>My run:</b> the same circle setup as slide 2, with the first hidden layer cut from 6 neurons to 1. The whole network can now draw only one straight line, so it splits the plane in two and misclassifies most of the outer ring. After 311 epochs the test loss was stuck at 0.446 (training 0.394), against 0.034 with 6 neurons.</figcaption>
+  </figure>
+  <p class="playground"><b>In the Playground:</b> every neuron's small preview square shows the boundary it has learned. In the first hidden layer each one is a single straight split, so the number of neurons there sets how many edges the final shape can have.</p>
+</section>
+
+<!-- 6 WEIGHTS -->
+<section class="slide" id="s6">
+  <div class="eyebrow"><span>Component 3 of 6</span><span class="num">06</span></div>
+  <h2>Weights and biases</h2>
+  <div class="grid two">
+    <div class="grid" style="gap:16px">
+      <p class="def"><b>A weight is a learnable number on each connection that says how strongly, and in which direction, one neuron's output affects the next.</b> A bias shifts a neuron's threshold up or down <span class="cite">(Google for Developers, n.d.)</span>.</p>
+      <ul class="points">
+        <li><b>Sign</b>: positive weights push toward one class, negative toward the other.</li>
+        <li><b>Magnitude</b>: a large weight makes that input matter a lot; a weight near zero effectively cuts the connection.</li>
+        <li><b>Learning is weight adjustment.</b> Everything the network "knows" is stored in these numbers.</li>
+        <li><b>Regularization</b> (L1, L2) penalizes large weights to keep the model simpler.</li>
+      </ul>
+    </div>
+    <div class="fig small"><svg id="weightFig" viewBox="0 0 420 260" role="img" aria-label="The same connections at epoch 0, thin and random, and after training, with a few thick strong connections."></svg></div>
+  </div>
+  <p class="playground"><b>In the Playground:</b> at epoch 0 every line is thin and random. After training, a few lines become thick and the rest fade. With L1 regularization, unused connections dropped close to zero.</p>
+</section>
+
+<!-- 7 ACTIVATION -->
+<section class="slide" id="s7">
+  <div class="eyebrow"><span>Component 4 of 6</span><span class="num">07</span></div>
+  <h2>Activation functions</h2>
+  <p class="def"><b>An activation function turns a neuron's weighted sum into its output and adds non-linearity.</b> Without it, any number of stacked layers collapses into a single linear model <span class="cite">(Goodfellow et al., 2016)</span>.</p>
+  <div class="grid four" id="actGrid"></div>
+  <p class="playground"><b>In the Playground:</b> ReLU reached a low loss in the fewest epochs and gave a slightly angular boundary. Tanh gave smoother curves. Sigmoid trained noticeably slower. Linear could not solve circle or spiral at any depth.</p>
+</section>
+
+<!-- 8 LOSS -->
+<section class="slide" id="s8">
+  <div class="eyebrow"><span>Component 5 of 6</span><span class="num">08</span></div>
+  <h2>Loss functions</h2>
+  <div class="grid two">
+    <div class="grid" style="gap:16px">
+      <p class="def"><b>A loss function measures how wrong the predictions are as a single number.</b> Training is the search for weights that make it small <span class="cite">(Goodfellow et al., 2016)</span>.</p>
+      <ul class="points">
+        <li><b>Mean squared error</b>: average squared distance between prediction and target. Used for regression, and shown by the Playground.</li>
+        <li><b>Cross-entropy</b>: penalizes confident wrong answers heavily. The usual choice for classification.</li>
+        <li><b>Training loss</b> is measured on data the model learns from; <b>test loss</b> on data it has never seen. The gap between them shows overfitting.</li>
+      </ul>
+      <div class="formula">MSE = (1/n) &Sigma; (y&#7522; &minus; &#375;&#7522;)&sup2;</div>
+    </div>
+    <div class="fig small"><svg id="lossFig" viewBox="0 0 420 260" role="img" aria-label="Training loss keeps falling while test loss falls then rises again; the widening gap marks overfitting."></svg></div>
+  </div>
+  <p class="playground"><b>In the Playground:</b> on the spiral with noise at 40 and a large network, training loss kept falling while test loss leveled off and crept up. That gap was my clearest picture of overfitting.</p>
+</section>
+
+<!-- 9 OPTIMIZATION -->
+<section class="slide" id="s9">
+  <div class="eyebrow"><span>Component 6 of 6</span><span class="num">09</span></div>
+  <h2>Optimization algorithms</h2>
+  <div class="grid two">
+    <div class="fig small"><svg id="optFig" viewBox="0 0 420 260" role="img" aria-label="Loss over epochs for three learning rates: too small descends slowly, well chosen descends quickly and settles, too large oscillates and does not converge."></svg></div>
+    <div class="grid" style="gap:16px">
+      <p class="def"><b>An optimizer decides how to change the weights after each batch.</b> It follows the gradient of the loss downhill <span class="cite">(Ruder, 2016)</span>.</p>
+      <div class="formula">w &larr; w &minus; &eta; &middot; &part;Loss / &part;w</div>
+      <ul class="points">
+        <li><b>Gradient descent / SGD</b>: step against the gradient; &eta; is the learning rate. Mini-batches make each step cheap.</li>
+        <li><b>Momentum</b> keeps some of the previous step to roll through small bumps.</li>
+        <li><b>Adam</b> adapts the step size per weight. It is the common default in practice <span class="cite">(Kingma &amp; Ba, 2015)</span>.</li>
+        <li><b>Learning rate</b> matters most: too small is slow, too large overshoots.</li>
+      </ul>
+    </div>
+  </div>
+  <figure class="shot">
+    <img src="nn-playground-run-lr10.jpg" alt="My Playground run: circle dataset, two hidden layers of 4 neurons, tanh, learning rate 10. The output is orange everywhere; test loss 0.984 and training loss 1.016 at epoch 396." loading="lazy">
+    <figcaption><b>My run:</b> circle data, two hidden layers of 4 neurons, tanh, learning rate 10. The loss shot up to about 1.0 in the first few epochs and stayed flat. Every step overshot so far that the tanh neurons saturated at their limits, gradients vanished, and the network gave up and labeled the whole plane orange. After 396 epochs: test loss 0.984, training loss 1.016.</figcaption>
+  </figure>
+  <p class="playground"><b>In the Playground</b> (which uses mini-batch gradient descent): at learning rate 1 (slide 2) the loss spiked early and then settled at a test loss of 0.034. At learning rate 10 the same kind of network never learned at all. The learning rate alone decided between a solved problem and a useless model.</p>
+</section>
+
+<!-- 10 FINDINGS -->
+<section class="slide" id="s10">
+  <div class="eyebrow"><span>Experiment results</span><span class="num">10</span></div>
+  <h2>What each change did</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Change</th><th>Training time</th><th>Model complexity</th><th>Performance</th></tr></thead>
+      <tbody>
+        <tr><td>Gaussian &rarr; circle / XOR</td><td><span class="chip lo">fast</span> once a hidden layer exists</td><td>1 layer, 3&ndash;4 neurons enough</td><td>Near-perfect test loss with ReLU or tanh</td></tr>
+        <tr><td>Spiral, raw X&#8321;, X&#8322;</td><td><span class="chip hi">slow</span> often 1,000+ epochs</td><td>Needed 3+ layers of 6&ndash;8 neurons</td><td>Reached good loss but sometimes stalled; sensitive to learning rate</td></tr>
+        <tr><td>Add engineered features</td><td><span class="chip lo">much faster</span></td><td>Circle solved with X&#8321;&sup2;, X&#8322;&sup2; and no hidden layer; XOR with X&#8321;X&#8322;</td><td>Same accuracy with a far smaller network</td></tr>
+        <tr><td>Noise 0 &rarr; 40+</td><td>Longer, loss stays higher</td><td>Large networks started fitting noise</td><td>Test loss rose and the train/test gap widened</td></tr>
+        <tr><td>Circle: 6 &rarr; 1 neuron in layer 1 <span class="cite">(my runs)</span></td><td><span class="chip hi">stalled</span> loss flat after ~100 epochs</td><td>Bottleneck: one line for the whole network</td><td>Test loss 0.446 vs. 0.034 with 6 neurons</td></tr>
+        <tr><td>Learning rate 1 &rarr; 10 <span class="cite">(my runs)</span></td><td><span class="chip hi">diverged</span> loss jumped to ~1.0 at once</td><td>Unchanged (2 layers of 4)</td><td>Test loss 0.984; every point labeled one class</td></tr>
+        <tr><td>More layers / neurons</td><td>More time per epoch</td><td>Higher capacity</td><td>Helped on spiral; on simple data, no gain and more overfitting</td></tr>
+        <tr><td>Lower training ratio (e.g. 30%)</td><td>Fast per epoch</td><td>Unchanged</td><td>Worse generalization, especially with noise</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The pattern: <b style="color:var(--ink)">match the model to the problem.</b> Good input features did more than extra layers, and extra capacity paid off only when the data was genuinely complex.</p>
+</section>
+
+<!-- 11 SUMMARY -->
+<section class="slide" id="s11">
+  <div class="eyebrow"><span>Summary</span><span class="num">11</span></div>
+  <h2>Why visualizing neural networks matters</h2>
+  <div class="grid three">
+    <div class="tile"><h3>It makes the abstract concrete</h3><p>Weights, activations and loss are numbers on paper. Watching lines thicken and the boundary bend shows what each one actually does.</p></div>
+    <div class="tile"><h3>It speeds up debugging</h3><p>A flat loss curve, a flickering boundary or a growing train/test gap each point to a specific fix: learning rate, capacity, or regularization.</p></div>
+    <div class="tile"><h3>It supports explanation</h3><p>Stakeholders trust models they can see. A visual is the fastest way to explain why a model behaves the way it does.</p></div>
+  </div>
+  <h3 style="margin-top:6px">Key insights from the exercise</h3>
+  <ul class="points">
+    <li><b>Features beat depth.</b> One squared feature replaced an entire hidden layer on the circle dataset.</li>
+    <li><b>Non-linearity is the point.</b> Without an activation function, depth adds nothing.</li>
+    <li><b>Learning rate is the first thing to tune.</b> It decided whether training crawled, converged or diverged.</li>
+    <li><b>Watch test loss, not training loss.</b> Noise and oversized networks hide overfitting behind a falling training curve.</li>
+    <li><b>Same habit as data engineering:</b> change one variable, observe, and verify against data the system has not seen.</li>
+  </ul>
+</section>
+
+<!-- 12 REFERENCES -->
+<section class="slide" id="s12">
+  <div class="eyebrow"><span>References</span><span class="num">12</span></div>
+  <h2>References</h2>
+  <ol class="refs">
+    <li>Goodfellow, I., Bengio, Y., &amp; Courville, A. (2016). <i>Deep learning</i>. MIT Press. <a href="https://www.deeplearningbook.org/" target="_blank" rel="noopener">https://www.deeplearningbook.org/</a></li>
+    <li>Google for Developers. (n.d.). <i>Neural networks</i> [Machine Learning Crash Course]. Retrieved October 31, 2026, from <a href="https://developers.google.com/machine-learning/crash-course/neural-networks" target="_blank" rel="noopener">https://developers.google.com/machine-learning/crash-course/neural-networks</a></li>
+    <li>Kingma, D. P., &amp; Ba, J. (2015). Adam: A method for stochastic optimization. In <i>Proceedings of the 3rd International Conference on Learning Representations (ICLR)</i>. <a href="https://arxiv.org/abs/1412.6980" target="_blank" rel="noopener">https://arxiv.org/abs/1412.6980</a></li>
+    <li>LeCun, Y., Bengio, Y., &amp; Hinton, G. (2015). Deep learning. <i>Nature, 521</i>(7553), 436&ndash;444. <a href="https://doi.org/10.1038/nature14539" target="_blank" rel="noopener">https://doi.org/10.1038/nature14539</a></li>
+    <li>Nair, V., &amp; Hinton, G. E. (2010). Rectified linear units improve restricted Boltzmann machines. In <i>Proceedings of the 27th International Conference on Machine Learning (ICML)</i> (pp. 807&ndash;814).</li>
+    <li>Ruder, S. (2016). <i>An overview of gradient descent optimization algorithms</i> (arXiv:1609.04747). arXiv. <a href="https://arxiv.org/abs/1609.04747" target="_blank" rel="noopener">https://arxiv.org/abs/1609.04747</a></li>
+    <li>Rumelhart, D. E., Hinton, G. E., &amp; Williams, R. J. (1986). Learning representations by back-propagating errors. <i>Nature, 323</i>(6088), 533&ndash;536. <a href="https://doi.org/10.1038/323533a0" target="_blank" rel="noopener">https://doi.org/10.1038/323533a0</a></li>
+    <li>Smilkov, D., Carter, S., Sculley, D., Vi&eacute;gas, F. B., &amp; Wattenberg, M. (2017). <i>Direct-manipulation visualization of deep networks</i> (arXiv:1708.03788). arXiv. <a href="https://arxiv.org/abs/1708.03788" target="_blank" rel="noopener">https://arxiv.org/abs/1708.03788</a></li>
+    <li>TensorFlow. (n.d.). <i>A neural network playground</i> [Interactive web application]. Retrieved October 31, 2026, from <a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">https://playground.tensorflow.org/</a></li>
+  </ol>
+  <p class="tag" style="margin-top:auto">APA 7th edition. Experiment observations on slides 4&ndash;10 are my own runs in the Playground.</p>
+</section>
+
+<footer>Kalyani Guggilla &middot; Built by hand for the portfolio &middot; Experiments run in the <a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">TensorFlow Neural Network Playground</a></footer>
+</main>
+
+<script>
+(function(){
+  const NS="http://www.w3.org/2000/svg";
+  const el=(tag,attrs,parent,text)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e;};
+  // deterministic pseudo-random so the diagrams look the same every load
+  let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646;};
+
+  function network(svg,layers,opt){
+    const W=opt.w,H=opt.h,x0=opt.x0,x1=opt.x1,pos=[];
+    layers.forEach((n,i)=>{const x=x0+(x1-x0)*i/(layers.length-1);const col=[];
+      for(let j=0;j<n;j++){col.push([x,opt.top+(opt.bot-opt.top)*(n===1?.5:j/(n-1))]);}pos.push(col);});
+    for(let i=0;i<pos.length-1;i++)pos[i].forEach(a=>pos[i+1].forEach(b=>{
+      const w=rnd()*2-1;el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:w>=0?'var(--accent)':'var(--neg)','stroke-width':(0.6+Math.abs(w)*opt.maxw).toFixed(2),'stroke-opacity':.75},svg);}));
+    pos.forEach((col,i)=>col.forEach(p=>el('circle',{cx:p[0],cy:p[1],r:opt.r,fill:'var(--bg-card)',stroke:i===0||i===pos.length-1?'var(--accent)':'var(--ink-faint)','stroke-width':2},svg)));
+    return pos;
+  }
+
+  // hero
+  network(document.getElementById('heroNet'),[2,6,6,4,1],{w:900,h:170,x0:60,x1:840,top:18,bot:152,r:9,maxw:2.6});
+
+  // architecture
+  (function(){
+    const s=document.getElementById('archNet');
+    const pos=network(s,[3,4,3,1],{w:960,h:420,x0:110,x1:640,top:70,bot:300,r:20,maxw:4});
+    const labIn=['X₁','X₂','X₁²'];
+    pos[0].forEach((p,i)=>el('text',{x:p[0],y:p[1]+5,'text-anchor':'middle','font-size':14,'font-weight':600,style:'fill:var(--ink)'},s,labIn[i]));
+    el('text',{x:pos[3][0][0],y:pos[3][0][1]+5,'text-anchor':'middle','font-size':14,'font-weight':600,style:'fill:var(--ink)'},s,'ŷ');
+    const heads=[['Input layer','features'],['Hidden layer 1','4 neurons'],['Hidden layer 2','3 neurons'],['Output layer','prediction']];
+    pos.forEach((col,i)=>{el('text',{x:col[0][0],y:30,'text-anchor':'middle','font-size':14,'font-weight':650,style:'fill:var(--ink)'},s,heads[i][0]);
+      el('text',{x:col[0][0],y:48,'text-anchor':'middle','font-size':12},s,heads[i][1]);});
+    // loss box
+    const ox=pos[3][0][0],oy=pos[3][0][1];
+    el('line',{x1:ox+22,y1:oy,x2:760,y2:oy,stroke:'var(--ink-faint)','stroke-width':2,'marker-end':'url(#arr)'},s);
+    const defs=el('defs',{},s);const m=el('marker',{id:'arr',viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:7,markerHeight:7,orient:'auto-start-reverse'},defs);
+    el('path',{d:'M0,0 L10,5 L0,10 z',fill:'var(--ink-faint)'},m);
+    el('rect',{x:766,y:oy-40,width:170,height:80,rx:10,fill:'var(--accent-soft)',stroke:'var(--accent)','stroke-width':1.5},s);
+    el('text',{x:851,y:oy-8,'text-anchor':'middle','font-size':15,'font-weight':650,style:'fill:var(--ink)'},s,'Loss function');
+    el('text',{x:851,y:oy+15,'text-anchor':'middle','font-size':12},s,'compare ŷ with true y');
+    // forward label
+    el('text',{x:375,y:338,'text-anchor':'middle','font-size':13,'font-weight':600,style:'fill:var(--accent-ink)'},s,'FORWARD PASS → activations flow left to right');
+    // backprop arc
+    el('path',{d:`M851,${oy+42} C851,395 600,395 110,395 L110,330`,fill:'none',stroke:'var(--ink-faint)','stroke-width':2,'stroke-dasharray':'6 5','marker-end':'url(#arr)'},s);
+    el('rect',{x:300,y:382,width:330,height:26,rx:13,fill:'var(--bg-card)',stroke:'var(--line)'},s);
+    el('text',{x:465,y:400,'text-anchor':'middle','font-size':12.5,'font-weight':600},s,'BACKPROPAGATION: optimizer updates weights');
+  })();
+
+  // layers figure
+  (function(){
+    const s=document.getElementById('layerFig');
+    const rows=[['Input layer','raw features: X₁, X₂','var(--accent-soft)'],['Hidden layers','learned features: lines → curves → regions','var(--bg-soft)'],['Output layer','prediction: class A or B','var(--accent-soft)']];
+    rows.forEach((r,i)=>{const y=14+i*98;
+      el('rect',{x:10,y:y,width:400,height:76,rx:10,fill:r[2],stroke:'var(--line)'},s);
+      el('text',{x:30,y:y+33,'font-size':16,'font-weight':650,style:'fill:var(--ink)'},s,r[0]);
+      el('text',{x:30,y:y+56,'font-size':13},s,r[1]);
+      for(let k=0;k<(i===1?5:i===0?2:1);k++)el('circle',{cx:388-k*24,cy:y+38,r:8,fill:'var(--bg-card)',stroke:'var(--accent)','stroke-width':2},s);
+      if(i<2)el('path',{d:`M210,${y+78} l0,16 m-6,-7 l6,7 l6,-7`,stroke:'var(--ink-faint)','stroke-width':2,fill:'none'},s);
+    });
+  })();
+
+  // neuron figure
+  (function(){
+    const s=document.getElementById('neuronFig');
+    const ins=[['x₁','w₁',60],['x₂','w₂',140],['x₃','w₃',220]];
+    ins.forEach((v,i)=>{el('circle',{cx:40,cy:v[2],r:18,fill:'var(--bg-card)',stroke:'var(--accent)','stroke-width':2},s);
+      el('text',{x:40,y:v[2]+5,'text-anchor':'middle','font-size':14,'font-weight':600,style:'fill:var(--ink)'},s,v[0]);
+      el('line',{x1:58,y1:v[2],x2:196,y2:140,stroke:i===1?'var(--neg)':'var(--accent)','stroke-width':i===0?4:2},s);
+      el('text',{x:110,y:v[2]+(140-v[2])*.45-8,'font-size':13,'font-weight':600,style:'fill:var(--ink-soft)'},s,v[1]);});
+    el('circle',{cx:230,cy:140,r:36,fill:'var(--accent-soft)',stroke:'var(--accent)','stroke-width':2},s);
+    el('text',{x:230,y:136,'text-anchor':'middle','font-size':20,'font-weight':700,style:'fill:var(--ink)'},s,'Σ');
+    el('text',{x:230,y:156,'text-anchor':'middle','font-size':11},s,'+ bias b');
+    el('line',{x1:266,y1:140,x2:300,y2:140,stroke:'var(--ink-faint)','stroke-width':2},s);
+    el('rect',{x:300,y:112,width:70,height:56,rx:10,fill:'var(--bg-card)',stroke:'var(--ink-faint)','stroke-width':2},s);
+    el('path',{d:'M310,152 L333,152 L360,122',fill:'none',stroke:'var(--accent)','stroke-width':2.5},s);
+    el('text',{x:335,y:190,'text-anchor':'middle','font-size':12},s,'activation f');
+    el('line',{x1:370,y1:140,x2:420,y2:140,stroke:'var(--ink-faint)','stroke-width':2},s);
+    el('text',{x:430,y:145,'font-size':14,'font-weight':600,style:'fill:var(--ink)'},s,'out');
+    el('text',{x:230,y:250,'text-anchor':'middle','font-size':12.5},s,'weighted sum  →  non-linear squash  →  next layer');
+  })();
+
+  // weight figure
+  (function(){
+    const s=document.getElementById('weightFig');
+    const draw=(ox,trained,label)=>{
+      const L=[30,95,160,225].map(y=>[ox,y]),R=[60,130,200].map(y=>[ox+150,y]);
+      const strong={'0-0':2.2,'1-1':-2,'3-2':1.8,'2-1':.9};
+      L.forEach((a,i)=>R.forEach((b,j)=>{let w=trained?(strong[i+'-'+j]||(rnd()*.2-.1)):(rnd()*.6-.3);
+        el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:w>=0?'var(--accent)':'var(--neg)','stroke-width':(0.5+Math.abs(w)*2.6).toFixed(2),'stroke-opacity':trained&&Math.abs(w)<.2?.35:.85},s);}));
+      [...L,...R].forEach(p=>el('circle',{cx:p[0],cy:p[1],r:9,fill:'var(--bg-card)',stroke:'var(--ink-faint)','stroke-width':2},s));
+      el('text',{x:ox+75,y:254,'text-anchor':'middle','font-size':12.5,'font-weight':600},s,label);};
+    draw(20,false,'Epoch 0: small, random');
+    draw(240,true,'Trained: a few strong paths');
+  })();
+
+  // activation tiles
+  (function(){
+    const g=document.getElementById('actGrid');
+    const fns=[
+      ['ReLU','max(0, z)',z=>Math.max(0,z),'Fast and the default for hidden layers (Nair & Hinton, 2010). Neurons can "die" if they get stuck at 0.'],
+      ['Tanh','(eᶻ − e⁻ᶻ) / (eᶻ + e⁻ᶻ)',z=>Math.tanh(z),'Output from −1 to 1, centered on zero. Smooth boundaries.'],
+      ['Sigmoid','1 / (1 + e⁻ᶻ)',z=>1/(1+Math.exp(-z)),'Output from 0 to 1, read as a probability. Saturates, so deep nets learn slowly.'],
+      ['Linear','z',z=>z/3,'No non-linearity. Stacked layers stay one straight line.']];
+    fns.forEach(f=>{
+      const t=document.createElement('div');t.className='tile';
+      const s=document.createElementNS(NS,'svg');s.setAttribute('viewBox','0 0 200 120');s.setAttribute('role','img');s.setAttribute('aria-label',f[0]+' curve');s.style.width='100%';s.style.height='auto';
+      el('line',{x1:10,y1:60,x2:190,y2:60,stroke:'var(--line)','stroke-width':1.5},s);el('line',{x1:100,y1:8,x2:100,y2:112,stroke:'var(--line)','stroke-width':1.5},s);
+      let d='';for(let i=0;i<=60;i++){const z=-3+6*i/60;let y=f[2](z);y=Math.max(-1.15,Math.min(1.15,y));d+=(i?'L':'M')+(10+180*i/60).toFixed(1)+','+(60-y*45).toFixed(1);}
+      el('path',{d,fill:'none',stroke:'var(--accent)','stroke-width':3,'stroke-linecap':'round'},s);
+      const h=document.createElement('h3');h.textContent=f[0];
+      const fx=document.createElement('span');fx.className='tag';fx.textContent=f[1];
+      const p=document.createElement('p');p.textContent=f[3];
+      t.append(h,fx,s,p);g.appendChild(t);});
+  })();
+
+  function axes(s,xl,yl){
+    el('line',{x1:44,y1:20,x2:44,y2:220,stroke:'var(--ink-faint)','stroke-width':1.5},s);
+    el('line',{x1:44,y1:220,x2:405,y2:220,stroke:'var(--ink-faint)','stroke-width':1.5},s);
+    el('text',{x:224,y:248,'text-anchor':'middle','font-size':12},s,xl);
+    el('text',{x:16,y:120,'text-anchor':'middle','font-size':12,transform:'rotate(-90 16 120)'},s,yl);
+  }
+  function curve(s,fn,color,dash){let d='';for(let i=0;i<=100;i++){const t=i/100;d+=(i?'L':'M')+(44+356*t).toFixed(1)+','+(220-190*fn(t)).toFixed(1);}
+    el('path',{d,fill:'none',stroke:color,'stroke-width':2.8,'stroke-dasharray':dash||'none','stroke-linecap':'round'},s);}
+
+  // loss figure
+  (function(){
+    const s=document.getElementById('lossFig');axes(s,'Epochs','Loss');
+    const tr=t=>.06+.86*Math.exp(-5*t), te=t=>.14+.78*Math.exp(-5.5*t)+.32*Math.max(0,t-.42)**1.6;
+    el('rect',{x:44+356*.42,y:20,width:356*.58,height:200,fill:'var(--neg-soft)',opacity:.7},s);
+    el('text',{x:44+356*.71,y:40,'text-anchor':'middle','font-size':12,'font-weight':600,style:'fill:var(--neg)'},s,'overfitting zone');
+    curve(s,tr,'var(--accent)');curve(s,te,'var(--neg)');
+    el('text',{x:398,y:220-190*tr(1)-8,'text-anchor':'end','font-size':12,'font-weight':600,style:'fill:var(--accent-ink)'},s,'training loss');
+    el('text',{x:398,y:220-190*te(1)-8,'text-anchor':'end','font-size':12,'font-weight':600,style:'fill:var(--neg)'},s,'test loss');
+  })();
+
+  // optimizer figure
+  (function(){
+    const s=document.getElementById('optFig');axes(s,'Epochs','Loss');
+    curve(s,t=>.95-.2*t,'var(--ink-faint)','6 5');
+    curve(s,t=>.07+.85*Math.exp(-7*t),'var(--accent)');
+    curve(s,t=>.38+.28*Math.abs(Math.sin(t*26)),'var(--neg)');
+    el('text',{x:398,y:220-190*.75-10,'text-anchor':'end','font-size':12,'font-weight':600,style:'fill:var(--ink-soft)'},s,'too small (slow)');
+    el('text',{x:398,y:220-190*.07-8,'text-anchor':'end','font-size':12,'font-weight':600,style:'fill:var(--accent-ink)'},s,'well chosen');
+    el('text',{x:398,y:14,'text-anchor':'end','font-size':12,'font-weight':600,style:'fill:var(--neg)'},s,'too large (oscillates)');
+  })();
+
+  // navigation
+  const slides=[...document.querySelectorAll('.slide')],counter=document.getElementById('counter');
+  const pad=n=>String(n).padStart(2,'0');let cur=0;
+  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){cur=slides.indexOf(e.target);counter.textContent=pad(cur+1)+' / '+pad(slides.length);}});},{rootMargin:'-45% 0px -45% 0px'});
+  slides.forEach(sl=>io.observe(sl));
+  const go=i=>{i=Math.max(0,Math.min(slides.length-1,i));slides[i].scrollIntoView({block:'start'});};
+  document.getElementById('prev').onclick=()=>go(cur-1);
+  document.getElementById('next').onclick=()=>go(cur+1);
+  document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea'))return;
+    if(['ArrowDown','PageDown','ArrowRight'].includes(e.key)){e.preventDefault();go(cur+1);}
+    if(['ArrowUp','PageUp','ArrowLeft'].includes(e.key)){e.preventDefault();go(cur-1);}});
+})();
+</script>
+</body>
+</html>
