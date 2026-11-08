@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Cost of Training an LLM | Kalyani Guggilla</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="An infographic on how generative AI large language models are trained, from data collection to deployment, and what each stage costs in data, compute, energy and time, with sourced examples from GPT-4, Gemini, Llama 3.1, Claude and DeepSeek-V3. By Kalyani Guggilla.">
+<style>
+  /* Layout: one long infographic column in the portfolio's own tokens. Pipeline first, then resources, then the money, then model profiles.
+     Phase colors (validated for color-vision deficiency in both themes): --c-data orange, --c-pre teal, --c-post violet. */
+  :root{
+    --bg:#ffffff; --bg-soft:#f6f7f9; --bg-card:#ffffff;
+    --ink:#14181d; --ink-soft:#4a545f; --ink-faint:#77828e; --line:#e2e6eb;
+    --accent:#0f5c72; --accent-soft:#e6f1f4; --accent-ink:#0f5c72;
+    --c-pre:#0d7fa0; --c-data:#c8702a; --c-post:#7b62c4;
+    --c-pre-soft:#e4f2f7; --c-data-soft:#faeee3; --c-post-soft:#efebf9;
+    --grid:#eceff2;
+    --shadow:0 1px 2px rgba(16,24,32,.05), 0 8px 24px rgba(16,24,32,.05);
+    --radius:12px; --maxw:1080px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1216; --bg-soft:#151a20; --bg-card:#161b22;
+      --ink:#e8edf2; --ink-soft:#a9b4c0; --ink-faint:#7e8b98; --line:#252c35;
+      --accent:#5fc2dc; --accent-soft:#12262d; --accent-ink:#8fd8ee;
+      --c-pre:#2298bb; --c-data:#cc7a30; --c-post:#8c74d6;
+      --c-pre-soft:#10252d; --c-data-soft:#2a1d12; --c-post-soft:#1e1a2c;
+      --grid:#20262e;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1216; --bg-soft:#151a20; --bg-card:#161b22;
+    --ink:#e8edf2; --ink-soft:#a9b4c0; --ink-faint:#7e8b98; --line:#252c35;
+    --accent:#5fc2dc; --accent-soft:#12262d; --accent-ink:#8fd8ee;
+    --c-pre:#2298bb; --c-data:#cc7a30; --c-post:#8c74d6;
+    --c-pre-soft:#10252d; --c-data-soft:#2a1d12; --c-post-soft:#1e1a2c;
+    --grid:#20262e;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+  body{margin:0;background:var(--bg-soft);color:var(--ink);font:16px/1.6 var(--font);-webkit-font-smoothing:antialiased}
+  a{color:var(--accent-ink);text-decoration:none}
+  a:hover{text-decoration:underline}
+  a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}
+  nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:saturate(160%) blur(10px);border-bottom:1px solid var(--line)}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;height:58px}
+  .brand{font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+  .nav-links{display:flex;gap:20px;font-size:14px}
+  .nav-links a{color:var(--ink-soft);font-weight:500}
+  @media (max-width:760px){ .nav-links a:not(.back){display:none} }
+
+  h1,h2,h3{text-wrap:balance;margin:0;letter-spacing:-.02em;line-height:1.15}
+  h1{font-size:clamp(34px,5.6vw,58px);font-weight:760}
+  h2{font-size:clamp(24px,3.3vw,32px);font-weight:720}
+  h3{font-size:17px;font-weight:650;letter-spacing:-.01em}
+  p{margin:0;max-width:68ch;color:var(--ink-soft)}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--accent-ink)}
+  .lede{font-size:clamp(16px,1.9vw,19px)}
+  section.block{padding-block:clamp(36px,6vw,64px);display:grid;gap:22px;border-top:1px solid var(--line)}
+  section.block:first-of-type{border-top:0}
+  .head{display:grid;gap:10px}
+  .grid{display:grid;gap:18px}
+  .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  @media (max-width:900px){ .g4{grid-template-columns:repeat(2,minmax(0,1fr))} .g3{grid-template-columns:minmax(0,1fr)} .g2{grid-template-columns:minmax(0,1fr)} }
+  @media (max-width:440px){ .g4{grid-template-columns:minmax(0,1fr)} }
+  .panel{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(18px,3vw,28px);display:grid;gap:14px;min-width:0}
+  .note{font-size:13px;color:var(--ink-faint);max-width:none}
+  .cite{color:var(--ink-faint);font-size:.9em}
+  sup a{font-size:11px;font-weight:600;padding:0 1px}
+
+  /* hero */
+  .hero{padding-block:clamp(40px,7vw,80px) clamp(24px,4vw,40px);display:grid;gap:18px}
+  .byline{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--ink-faint)}
+  .stat{background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:grid;gap:4px;align-content:start}
+  .stat b{font-size:clamp(24px,3vw,30px);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.1}
+  .stat span{font-size:13.5px;color:var(--ink-soft)}
+
+  /* pipeline */
+  .phases{display:grid;grid-template-columns:3fr 1fr 4fr;gap:6px}
+  .phase{font-size:12px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;padding:6px 10px;border-radius:6px;color:var(--ink)}
+  .ph-data{background:var(--c-data-soft);box-shadow:inset 3px 0 0 var(--c-data)}
+  .ph-pre{background:var(--c-pre-soft);box-shadow:inset 3px 0 0 var(--c-pre)}
+  .ph-post{background:var(--c-post-soft);box-shadow:inset 3px 0 0 var(--c-post)}
+  .steps{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;counter-reset:s}
+  .step{position:relative;background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:14px 12px 12px;display:grid;gap:8px;align-content:start;min-width:0}
+  .step .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+  .step[data-ph="data"] .n{background:var(--c-data)}
+  .step[data-ph="pre"] .n{background:var(--c-pre)}
+  .step[data-ph="post"] .n{background:var(--c-post)}
+  .step h3{font-size:15px}
+  .step p{font-size:13px;line-height:1.5}
+  .step:not(:last-child)::after{content:"";position:absolute;right:-6px;top:26px;width:6px;height:2px;background:var(--ink-faint)}
+  .res{display:flex;flex-wrap:wrap;gap:4px;margin-top:auto}
+  .res i{font-style:normal;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--ink-soft);white-space:nowrap}
+  .step .ex{font-size:12px;color:var(--ink-faint);border-top:1px dashed var(--line);padding-top:6px}
+  .step.big{box-shadow:0 0 0 2px var(--c-pre)}
+  @media (max-width:1000px){
+    .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .phases{display:none}
+    .step:not(:last-child)::after{display:none}
+    .step .phl{display:block}
+  }
+  @media (max-width:440px){ .steps{grid-template-columns:minmax(0,1fr)} }
+  .phl{display:none;font-size:11px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
+
+  /* stacked bar */
+  .stack{display:flex;height:34px;border-radius:6px;overflow:hidden;gap:2px;background:var(--bg-card)}
+  .stack div{height:100%}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13.5px;color:var(--ink-soft)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .sw{width:12px;height:12px;border-radius:3px;display:inline-block;flex:none}
+  .legend b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+  /* resource cards */
+  .rc{display:grid;gap:10px;align-content:start}
+  .rc .top{display:flex;align-items:center;gap:10px}
+  .ico{width:38px;height:38px;border-radius:9px;background:var(--accent-soft);display:grid;place-items:center;flex:none}
+  .ico svg{width:22px;height:22px;stroke:var(--accent-ink);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .rc dl{margin:0;display:grid;gap:8px;font-size:14px}
+  .rc dt{font-size:11.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
+  .rc dd{margin:0;color:var(--ink-soft)}
+  .rc dd b{color:var(--ink)}
+
+  /* charts */
+  .chart{width:100%;overflow-x:auto}
+  .chart svg{display:block;width:100%;height:auto;min-width:560px}
+  svg text{font-family:var(--font);fill:var(--ink-soft)}
+  svg .lab{fill:var(--ink);font-weight:600}
+  svg .val{fill:var(--ink);font-weight:650;font-variant-numeric:tabular-nums}
+  svg .muted{fill:var(--ink-faint)}
+  svg .gridl{stroke:var(--grid);stroke-width:1}
+  svg .axis{stroke:var(--ink-faint);stroke-width:1}
+  svg .bar{fill:var(--c-pre)}
+  svg .bar:hover,svg .hit:hover + .bar{opacity:.85}
+  svg .range{fill:var(--c-pre-soft);stroke:var(--c-pre);stroke-width:1.5;stroke-dasharray:4 3}
+  .tip{position:fixed;pointer-events:none;z-index:80;background:var(--ink);color:var(--bg);font-size:12.5px;line-height:1.4;padding:7px 10px;border-radius:7px;max-width:260px;opacity:0;transition:opacity .12s}
+  .tip.on{opacity:1}
+
+  /* table */
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg-card);box-shadow:var(--shadow)}
+  table{border-collapse:collapse;width:100%;font-size:14px;min-width:900px;table-layout:fixed}
+  table col.k{width:120px}
+  th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+  thead th{font-size:13px;color:var(--ink);background:var(--bg-soft);font-weight:700}
+  thead th small{display:block;font-weight:500;color:var(--ink-faint);font-size:12px}
+  tbody th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);font-weight:650;white-space:nowrap;background:var(--bg-soft)}
+  td{color:var(--ink-soft)}
+  td b{color:var(--ink);font-variant-numeric:tabular-nums}
+  tr:last-child td,tr:last-child th{border-bottom:0}
+  .disc{display:inline-block;font-size:11.5px;font-weight:650;border-radius:999px;padding:1px 9px}
+  .d-hi{background:var(--c-pre-soft);color:var(--c-pre)}
+  .d-mid{background:var(--c-post-soft);color:var(--c-post)}
+  .d-lo{background:var(--c-data-soft);color:var(--c-data)}
+
+  ul.k{margin:0;padding:0;list-style:none;display:grid;gap:12px}
+  ul.k li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;color:var(--ink-soft)}
+  ul.k li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:.55em}
+  ul.k b{color:var(--ink)}
+  ol.refs{margin:0;padding-left:1.4em;display:grid;gap:8px;font-size:13.5px;color:var(--ink-soft)}
+  ol.refs li{overflow-wrap:anywhere}
+  ol.refs i{color:var(--ink)}
+  footer{padding-block:28px 48px;color:var(--ink-faint);font-size:13px;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<nav>
+  <div class="wrap nav-inner">
+    <a class="brand" href="./">Kalyani Guggilla</a>
+    <div class="nav-links">
+      <a href="#pipeline">Process</a><a href="#resources">Resources</a><a href="#costs">Costs</a><a href="#models">Models</a><a href="#sources">Sources</a>
+      <a class="back" href="./#projects">&larr; Portfolio</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">AI Infrastructure &middot; Infographic</span>
+  <h1>The Cost of Training an LLM</h1>
+  <p class="lede">How models like GPT-4, Gemini, Llama, Claude and DeepSeek go from raw text to a deployed assistant, and what each stage consumes in data, compute, energy, time and people.</p>
+  <div class="byline"><span>Kalyani Guggilla</span><span>M.S. Artificial Intelligence, Indiana Wesleyan University</span><span>November 2026</span></div>
+  <div class="grid g4" style="margin-top:8px">
+    <div class="stat"><b>$5.6M&ndash;$191M</b><span>Estimated compute cost of one final training run, DeepSeek-V3 to Gemini 1.0 Ultra<sup><a href="#r-deepseek">4</a>,<a href="#r-aiindex24">19</a></sup></span></div>
+    <div class="stat"><b>16,384</b><span>Nvidia H100 GPUs used to train Llama 3.1 405B<sup><a href="#r-llama">12</a></sup></span></div>
+    <div class="stat"><b>15 trillion+</b><span>Tokens of text in Llama 3.1&rsquo;s pre-training data<sup><a href="#r-llamacard">13</a></sup></span></div>
+    <div class="stat"><b>2.4&times; / year</b><span>Growth in frontier training cost since 2016; $1B runs expected by 2027<sup><a href="#r-epoch">3</a></sup></span></div>
+  </div>
+</header>
+
+<!-- PIPELINE -->
+<section class="block" id="pipeline">
+  <div class="head">
+    <span class="eyebrow">1 &middot; The training process</span>
+    <h2>Eight steps from raw text to a deployed model</h2>
+    <p>An LLM learns by predicting the next token in enormous amounts of text<sup><a href="#r-ibm">9</a>,<a href="#r-wolfram">22</a></sup>. That raw predictor is then tuned to follow instructions and behave safely before it is released. Each step draws on a different mix of resources.</p>
+  </div>
+  <div class="phases" aria-hidden="true">
+    <div class="phase ph-data">Data preparation &middot; steps 1&ndash;3</div>
+    <div class="phase ph-pre">Pre-train &middot; 4</div>
+    <div class="phase ph-post">Post-training, testing &amp; deployment &middot; 5&ndash;8</div>
+  </div>
+  <ol class="steps" style="list-style:none;margin:0;padding:0">
+    <li class="step" data-ph="data"><span class="phl">Data preparation</span><span class="n">1</span><h3>Collect data</h3><p>Web crawls, books, code, scientific papers and licensed sources.</p><div class="ex">Llama 3.1: 15T+ tokens, cutoff December 2023</div><div class="res"><i>Data</i><i>People</i></div></li>
+    <li class="step" data-ph="data"><span class="phl">Data preparation</span><span class="n">2</span><h3>Clean &amp; filter</h3><p>Remove duplicates, spam, personal data and low-quality or toxic text; balance the mix of topics.</p><div class="ex">Quality matters as much as quantity</div><div class="res"><i>Compute</i><i>People</i></div></li>
+    <li class="step" data-ph="data"><span class="phl">Data preparation</span><span class="n">3</span><h3>Tokenize</h3><p>Split text into tokens, the word pieces the model reads and predicts.</p><div class="ex">About &frac34; of a word per token in English</div><div class="res"><i>Compute</i></div></li>
+    <li class="step big" data-ph="pre"><span class="phl">Pre-training</span><span class="n">4</span><h3>Pre-train</h3><p>Predict the next token across trillions of tokens on thousands of GPUs for weeks or months. This is where most compute goes.</p><div class="ex">Llama 3.1 405B: 30.84M GPU-hours</div><div class="res"><i>Compute</i><i>Energy</i><i>Time</i></div></li>
+    <li class="step" data-ph="post"><span class="phl">Post-training</span><span class="n">5</span><h3>Fine-tune</h3><p>Supervised fine-tuning on human-written example conversations teaches the model to follow instructions.</p><div class="ex">Thousands to millions of examples</div><div class="res"><i>People</i><i>Data</i></div></li>
+    <li class="step" data-ph="post"><span class="phl">Post-training</span><span class="n">6</span><h3>Align</h3><p>People rank answers to train a reward model (RLHF)<sup><a href="#r-ouyang">15</a></sup>. Anthropic also uses written principles and AI feedback (Constitutional AI)<sup><a href="#r-bai">2</a></sup>.</p><div class="ex">Human preference data is costly per label</div><div class="res"><i>People</i><i>Compute</i></div></li>
+    <li class="step" data-ph="post"><span class="phl">Testing</span><span class="n">7</span><h3>Evaluate &amp; red-team</h3><p>Benchmarks, safety testing and outside experts probing for harmful or wrong behavior.</p><div class="ex">GPT-4: about 6 months of safety work before launch<sup><a href="#r-gpt4">14</a></sup></div><div class="res"><i>People</i><i>Time</i></div></li>
+    <li class="step" data-ph="post"><span class="phl">Deployment</span><span class="n">8</span><h3>Deploy &amp; serve</h3><p>Run the model for users. Unlike training, inference cost recurs with every request.</p><div class="ex">Per-query energy varies 10&times; across models<sup><a href="#r-aiindex26">21</a></sup></div><div class="res"><i>Compute</i><i>Energy</i></div></li>
+  </ol>
+
+  <div class="panel">
+    <div class="head">
+      <h3>Where the GPU-hours go: DeepSeek-V3, the most detailed public breakdown</h3>
+      <p>DeepSeek published GPU-hours for each stage of its final training run<sup><a href="#r-deepseek">4</a></sup>. Pre-training used 96% of the compute; post-training used well under 1%.</p>
+    </div>
+    <div class="stack" role="img" aria-label="Stacked bar: pre-training 2,664 thousand GPU-hours (95.6%), context extension 119 thousand (4.3%), post-training 5 thousand (0.2%).">
+      <div style="flex:2664;background:var(--c-pre)" title="Pre-training: 2,664K GPU-hours (95.6%)"></div>
+      <div style="flex:119;background:var(--c-data)" title="Context extension: 119K GPU-hours (4.3%)"></div>
+      <div style="flex:5;min-width:3px;background:var(--c-post)" title="Post-training: 5K GPU-hours (0.2%)"></div>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--c-pre)"></i>Pre-training <b>2,664K GPU-h &middot; 95.6%</b></span>
+      <span><i class="sw" style="background:var(--c-data)"></i>Context extension <b>119K &middot; 4.3%</b></span>
+      <span><i class="sw" style="background:var(--c-post)"></i>Post-training <b>5K &middot; 0.2%</b></span>
+    </div>
+    <p class="note">Total 2.788M H800 GPU-hours. GPU-hours leave out the cost of human labelers, which is where post-training spends most of its money. Reasoning models released since 2024 spend far more compute on reinforcement learning after pre-training.</p>
+  </div>
+</section>
+
+<!-- RESOURCES -->
+<section class="block" id="resources">
+  <div class="head">
+    <span class="eyebrow">2 &middot; The resources</span>
+    <h2>Four resources set the cost, and people set the budget</h2>
+    <p>Scaling research shows that a model improves predictably as parameters, data and compute grow together<sup><a href="#r-hoffmann">8</a></sup>. That relationship is why each resource below has climbed with every model generation.</p>
+  </div>
+  <div class="grid g4">
+    <article class="panel rc">
+      <div class="top"><span class="ico"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v6.5c0 1.6 3.4 2.8 7.5 2.8s7.5-1.2 7.5-2.8V5.5"/><path d="M4.5 12v6.5c0 1.6 3.4 2.8 7.5 2.8s7.5-1.2 7.5-2.8V12"/></svg></span><h3>Data</h3></div>
+      <dl>
+        <div><dt>What it is</dt><dd>Trillions of tokens of text and code, plus human-written examples and rankings for post-training.</dd></div>
+        <div><dt>Example</dt><dd>Llama 3.1: <b>15T+ tokens</b>. DeepSeek-V3: <b>14.8T tokens</b>.</dd></div>
+        <div><dt>Cost</dt><dd>Rising. Google pays Reddit about <b>$60M a year</b> for access<sup><a href="#r-reddit">5</a></sup>. Anthropic&rsquo;s <b>$1.5B</b> authors&rsquo; settlement priced unlicensed books at about $3,000 each<sup><a href="#r-jurist">10</a></sup>.</dd></div>
+        <div><dt>Effect on performance</dt><dd>More and cleaner data lifts quality at a fixed model size.</dd></div>
+      </dl>
+    </article>
+    <article class="panel rc">
+      <div class="top"><span class="ico"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2.5V6M15 2.5V6M9 18v3.5M15 18v3.5M2.5 9H6M2.5 15H6M18 9h3.5M18 15h3.5"/></svg></span><h3>Compute</h3></div>
+      <dl>
+        <div><dt>What it is</dt><dd>GPU or TPU clusters linked by fast networks, measured in GPU-hours and FLOP.</dd></div>
+        <div><dt>Example</dt><dd>Llama 3.1 405B: <b>3.8 &times; 10&sup2;&#8309; FLOP</b> on up to <b>16,384 H100s</b><sup><a href="#r-llama">12</a></sup>.</dd></div>
+        <div><dt>Cost</dt><dd>The largest line item. Hardware is <b>47&ndash;67%</b> of total development cost<sup><a href="#r-epoch">3</a></sup>.</dd></div>
+        <div><dt>Effect on performance</dt><dd>The strongest single predictor of capability across model generations.</dd></div>
+      </dl>
+    </article>
+    <article class="panel rc">
+      <div class="top"><span class="ico"><svg viewBox="0 0 24 24"><path d="M13 2.5 5 13.5h6l-1 8 8-11h-6z"/></svg></span><h3>Energy</h3></div>
+      <dl>
+        <div><dt>What it is</dt><dd>Electricity for the chips plus cooling and data center overhead.</dd></div>
+        <div><dt>Example</dt><dd>Llama 3.1 405B GPUs alone: about <b>21.6 GWh</b><sup>*</sup>. Gemini 1.0 Ultra drew an estimated <b>35 MW</b><sup><a href="#r-epoch">3</a></sup>.</dd></div>
+        <div><dt>Cost</dt><dd>Only <b>2&ndash;6%</b> of dollars<sup><a href="#r-epoch">3</a></sup>, but power capacity decides where and how fast labs can train.</dd></div>
+        <div><dt>Effect on performance</dt><dd>Indirect. Available power caps the size of the cluster.</dd></div>
+      </dl>
+    </article>
+    <article class="panel rc">
+      <div class="top"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><h3>Time</h3></div>
+      <dl>
+        <div><dt>What it is</dt><dd>Months of wall-clock training, plus months of data work, tuning and safety testing.</dd></div>
+        <div><dt>Example</dt><dd>DeepSeek-V3: under <b>2 months</b> on 2,048 GPUs. Llama 3: <b>419</b> unplanned interruptions in a 54-day stretch<sup><a href="#r-toms">18</a></sup>.</dd></div>
+        <div><dt>Cost</dt><dd>Every day of a run rents or ties up the whole cluster, and staff are <b>29&ndash;49%</b> of cost<sup><a href="#r-epoch">3</a></sup>.</dd></div>
+        <div><dt>Effect on performance</dt><dd>Longer runs see more data; failures and restarts waste it.</dd></div>
+      </dl>
+    </article>
+  </div>
+  <p class="note">* My calculation: 30.84M GPU-hours &times; 700 W per H100 = 21.6 GWh, roughly the yearly electricity use of 2,000 U.S. homes. It counts the GPUs only, not cooling or other servers.</p>
+</section>
+
+<!-- COSTS -->
+<section class="block" id="costs">
+  <div class="head">
+    <span class="eyebrow">3 &middot; The money and the footprint</span>
+    <h2>What training runs cost, and where the money goes</h2>
+    <p>Few labs publish costs. The figures below are independent estimates or developer statements, and they measure different things, so compare them with care.</p>
+  </div>
+  <div class="panel">
+    <div class="head"><h3>Estimated compute cost of the final training run</h3><p class="note">US dollars, millions. Hover a bar for its source and method.</p></div>
+    <div class="chart"><svg id="costChart" viewBox="0 0 900 330" role="img" aria-label="Horizontal bar chart of estimated training cost: Gemini 1.0 Ultra $191M, Llama 3.1 405B $170M, Grok-2 about $107M, GPT-4 $78M, Claude 3.5 Sonnet a few tens of millions, DeepSeek-V3 $5.6M."></svg></div>
+    <p class="note">Gemini, GPT-4, Llama and Grok: Stanford AI Index estimates of compute cost<sup><a href="#r-aiindex24">19</a>,<a href="#r-aiindex25">20</a></sup>. Claude 3.5 Sonnet: &ldquo;a few $10M&rsquo;s&rdquo;, according to Anthropic&rsquo;s CEO<sup><a href="#r-amodei">1</a></sup>; the dashed band shows that range, not an exact figure. DeepSeek-V3: the developer&rsquo;s own figure at $2 per GPU-hour, final run only<sup><a href="#r-deepseek">4</a></sup>. None of these include research experiments, failed runs, staff or buying the hardware. OpenAI&rsquo;s CEO put GPT-4&rsquo;s total cost at more than $100M<sup><a href="#r-wired">11</a></sup>.</p>
+  </div>
+  <div class="grid g2">
+    <div class="panel">
+      <div class="head"><h3>Share of total development cost</h3><p class="note">Range across GPT-3, OPT-175B, GPT-4 and Gemini 1.0 Ultra<sup><a href="#r-epoch">3</a></sup>.</p></div>
+      <div class="chart"><svg id="shareChart" viewBox="0 0 440 180" role="img" aria-label="Range chart: hardware 47 to 67 percent, research staff 29 to 49 percent, energy 2 to 6 percent of development cost." style="min-width:0"></svg></div>
+      <p class="note">Hardware includes chips, servers and networking, amortized over their life. Staff includes equity.</p>
+    </div>
+    <div class="panel">
+      <div class="head"><h3>Estimated training emissions</h3><p class="note">Tonnes of CO&#8322;-equivalent.</p></div>
+      <div class="chart"><svg id="co2Chart" viewBox="0 0 440 200" role="img" aria-label="Bar chart of training emissions: GPT-3 552 tonnes, GPT-4 5,184, Llama 3.1 405B 8,930, Grok 4 over 72,000." style="min-width:0"></svg></div>
+      <p class="note">GPT-3: Patterson et al.<sup><a href="#r-patterson">17</a></sup>. GPT-4 and Grok 4: AI Index 2026 estimates, which its editors say to read with caution; Epoch AI puts Grok 4 near 140,000 t<sup><a href="#r-aiindex26">21</a></sup>. Llama: Meta&rsquo;s location-based figure (zero market-based, because of renewable energy purchases)<sup><a href="#r-llamacard">13</a></sup>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- MODELS -->
+<section class="block" id="models">
+  <div class="head">
+    <span class="eyebrow">4 &middot; Specific models</span>
+    <h2>Five models, five levels of disclosure</h2>
+    <p>Open-weight developers (Meta, DeepSeek) publish detailed training figures. Closed developers (OpenAI, Google, Anthropic) disclose little, so most of their numbers are outside estimates.</p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <colgroup><col class="k"><col><col><col><col><col></colgroup>
+      <thead><tr>
+        <th></th>
+        <th>GPT-4<small>OpenAI &middot; Mar 2023</small></th>
+        <th>Gemini 1.0 Ultra<small>Google &middot; Dec 2023</small></th>
+        <th>Llama 3.1 405B<small>Meta &middot; Jul 2024</small></th>
+        <th>Claude 3.5 Sonnet<small>Anthropic &middot; Jun 2024</small></th>
+        <th>DeepSeek-V3<small>DeepSeek &middot; Dec 2024</small></th>
+      </tr></thead>
+      <tbody>
+        <tr><th>Size</th><td>Not disclosed</td><td>Not disclosed</td><td><b>405B</b> parameters</td><td>Not disclosed</td><td><b>671B</b> total, <b>37B</b> active per token (mixture of experts)</td></tr>
+        <tr><th>Data</th><td>Public and licensed data; size not disclosed</td><td>Multimodal web, code, images, audio, video; size not disclosed</td><td><b>15T+</b> tokens, cutoff Dec 2023</td><td>Not disclosed</td><td><b>14.8T</b> tokens</td></tr>
+        <tr><th>Compute</th><td>~<b>2.1 &times; 10&sup2;&#8309;</b> FLOP (Epoch AI estimate)</td><td>~<b>5 &times; 10&sup2;&#8309;</b> FLOP (Epoch AI estimate)</td><td><b>3.8 &times; 10&sup2;&#8309;</b> FLOP (Meta)</td><td>Not disclosed</td><td>~<b>3.3 &times; 10&sup2;&#8308;</b> FLOP (my estimate from 6 &times; active parameters &times; tokens)</td></tr>
+        <tr><th>Hardware &amp; time</th><td>Reportedly ~25,000 A100s for ~90&ndash;100 days (unconfirmed)<sup><a href="#r-semi">16</a></sup>; finished Aug 2022</td><td>Google TPUv4 fleet across several data centers<sup><a href="#r-gemini">7</a></sup></td><td>Up to <b>16,384</b> H100s; <b>30.84M</b> GPU-hours</td><td>Trained early 2024<sup><a href="#r-amodei">1</a></sup></td><td><b>2,048</b> H800s; <b>2.788M</b> GPU-hours; under 2 months</td></tr>
+        <tr><th>Energy &amp; CO&#8322;e</th><td>~5,184 t (AI Index estimate)</td><td>~35 MW power draw (Epoch AI estimate)</td><td>8,930 t location-based; ~21.6 GWh GPU energy</td><td>Not disclosed</td><td>Not disclosed</td></tr>
+        <tr><th>Est. cost</th><td><b>$78M</b> compute (AI Index); &gt;$100M total (CEO)</td><td><b>$191M</b> compute (AI Index)</td><td><b>$170M</b> compute (AI Index)</td><td>&ldquo;A few <b>$10M&rsquo;s</b>&rdquo; (CEO)</td><td><b>$5.6M</b> final run at rental prices (developer)</td></tr>
+        <tr><th>Disclosure</th><td><span class="disc d-lo">Low</span></td><td><span class="disc d-lo">Low</span></td><td><span class="disc d-hi">High</span></td><td><span class="disc d-mid">Cost range only</span></td><td><span class="disc d-hi">High, final run</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Sources: OpenAI<sup><a href="#r-gpt4">14</a></sup>, Gemini Team<sup><a href="#r-gemini">7</a></sup>, Meta<sup><a href="#r-llama">12</a>,<a href="#r-llamacard">13</a></sup>, Amodei<sup><a href="#r-amodei">1</a></sup>, DeepSeek-AI<sup><a href="#r-deepseek">4</a></sup>, Epoch AI<sup><a href="#r-epochdata">6</a></sup>, Stanford AI Index<sup><a href="#r-aiindex24">19</a>,<a href="#r-aiindex25">20</a>,<a href="#r-aiindex26">21</a></sup>. Scroll the table sideways on a small screen.</p>
+</section>
+
+<!-- TAKEAWAYS -->
+<section class="block">
+  <div class="head">
+    <span class="eyebrow">5 &middot; What this means</span>
+    <h2>Key takeaways</h2>
+  </div>
+  <ul class="k">
+    <li><span><b>Pre-training dominates compute.</b> It used 96% of DeepSeek-V3&rsquo;s GPU-hours. Post-training costs less in compute but more in human labor.</span></li>
+    <li><span><b>Hardware and people dominate dollars, not electricity.</b> Energy is 2&ndash;6% of cost but limits where and how big a cluster can be.</span></li>
+    <li><span><b>A headline cost is only part of the bill.</b> A final-run figure leaves out experiments, failed runs, staff, data licensing and the hardware itself. DeepSeek&rsquo;s $5.6M and Gemini Ultra&rsquo;s $191M are not measured the same way.</span></li>
+    <li><span><b>Efficiency competes with scale.</b> DeepSeek-V3 activates only 37B of its 671B parameters per token, which cuts training compute for its size.</span></li>
+    <li><span><b>Data is becoming a direct cost.</b> Licensing deals and copyright settlements now put a price on training text.</span></li>
+    <li><span><b>Costs keep rising.</b> Frontier training cost has grown about 2.4&times; a year, and Grok 4&rsquo;s estimated emissions are roughly 8&times; Llama 3.1 405B&rsquo;s.</span></li>
+  </ul>
+</section>
+
+<!-- SOURCES -->
+<section class="block" id="sources">
+  <div class="head"><span class="eyebrow">References</span><h2>Sources</h2><p class="note">APA 7th edition. Superscript numbers on this page link here.</p></div>
+  <ol class="refs">
+    <li id="r-amodei">Amodei, D. (2025, January). <i>On DeepSeek and export controls</i>. <a href="https://darioamodei.com/on-deepseek-and-export-controls" target="_blank" rel="noopener">https://darioamodei.com/on-deepseek-and-export-controls</a></li>
+    <li id="r-bai">Bai, Y., Kadavath, S., Kundu, S., Askell, A., Kernion, J., Jones, A., et al. (2022). <i>Constitutional AI: Harmlessness from AI feedback</i> (arXiv:2212.08073). arXiv. <a href="https://arxiv.org/abs/2212.08073" target="_blank" rel="noopener">https://arxiv.org/abs/2212.08073</a></li>
+    <li id="r-epoch">Cottier, B., Rahman, R., Fattorini, L., Maslej, N., Besiroglu, T., &amp; Owen, D. (2024). <i>The rising costs of training frontier AI models</i> (arXiv:2405.21015). arXiv. <a href="https://arxiv.org/abs/2405.21015" target="_blank" rel="noopener">https://arxiv.org/abs/2405.21015</a></li>
+    <li id="r-deepseek">DeepSeek-AI. (2024). <i>DeepSeek-V3 technical report</i> (arXiv:2412.19437). arXiv. <a href="https://arxiv.org/abs/2412.19437" target="_blank" rel="noopener">https://arxiv.org/abs/2412.19437</a></li>
+    <li id="r-reddit">Engadget. (2024, February 22). <i>Reddit is licensing its content to Google to help train its AI models</i>. <a href="https://engadget.com/reddit-is-licensing-its-content-to-google-to-help-train-its-ai-models-200013007.html" target="_blank" rel="noopener">https://engadget.com/reddit-is-licensing-its-content-to-google-to-help-train-its-ai-models-200013007.html</a></li>
+    <li id="r-epochdata">Epoch AI. (2025). <i>Data on notable AI models</i>. <a href="https://epoch.ai/data/notable-ai-models" target="_blank" rel="noopener">https://epoch.ai/data/notable-ai-models</a></li>
+    <li id="r-gemini">Gemini Team, Google. (2023). <i>Gemini: A family of highly capable multimodal models</i> (arXiv:2312.11805). arXiv. <a href="https://arxiv.org/abs/2312.11805" target="_blank" rel="noopener">https://arxiv.org/abs/2312.11805</a></li>
+    <li id="r-hoffmann">Hoffmann, J., Borgeaud, S., Mensch, A., Buchatskaya, E., Cai, T., Rutherford, E., et al. (2022). <i>Training compute-optimal large language models</i> (arXiv:2203.15556). arXiv. <a href="https://arxiv.org/abs/2203.15556" target="_blank" rel="noopener">https://arxiv.org/abs/2203.15556</a></li>
+    <li id="r-ibm">IBM Technology. (2023). <i>How large language models work</i> [Video]. YouTube. <a href="https://www.youtube.com/watch?v=5sLYAQS9sWQ" target="_blank" rel="noopener">https://www.youtube.com/watch?v=5sLYAQS9sWQ</a></li>
+    <li id="r-jurist">JURIST. (2026, July). <i>Judge approves record $1.5 billion AI copyright settlement involving Anthropic</i>. <a href="https://www.jurist.org/news/2026/07/judge-approves-record-1-5-billion-settlement-involving-anthropic/" target="_blank" rel="noopener">https://www.jurist.org/news/2026/07/judge-approves-record-1-5-billion-settlement-involving-anthropic/</a></li>
+    <li id="r-wired">Knight, W. (2023, April 17). OpenAI&rsquo;s CEO says the age of giant AI models is already over. <i>Wired</i>. <a href="https://www.wired.com/story/openai-ceo-sam-altman-the-age-of-giant-ai-models-is-already-over/" target="_blank" rel="noopener">https://www.wired.com/story/openai-ceo-sam-altman-the-age-of-giant-ai-models-is-already-over/</a></li>
+    <li id="r-llama">Llama Team, AI @ Meta. (2024). <i>The Llama 3 herd of models</i> (arXiv:2407.21783). arXiv. <a href="https://arxiv.org/abs/2407.21783" target="_blank" rel="noopener">https://arxiv.org/abs/2407.21783</a></li>
+    <li id="r-llamacard">Meta. (2024). <i>Llama 3.1 model card</i>. <a href="https://github.com/meta-llama/llama-models/blob/main/models/llama3_1/MODEL_CARD.md" target="_blank" rel="noopener">https://github.com/meta-llama/llama-models/blob/main/models/llama3_1/MODEL_CARD.md</a></li>
+    <li id="r-gpt4">OpenAI. (2023). <i>GPT-4 technical report</i> (arXiv:2303.08774). arXiv. <a href="https://arxiv.org/abs/2303.08774" target="_blank" rel="noopener">https://arxiv.org/abs/2303.08774</a></li>
+    <li id="r-ouyang">Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C. L., Mishkin, P., et al. (2022). <i>Training language models to follow instructions with human feedback</i> (arXiv:2203.02155). arXiv. <a href="https://arxiv.org/abs/2203.02155" target="_blank" rel="noopener">https://arxiv.org/abs/2203.02155</a></li>
+    <li id="r-semi">Patel, D., &amp; Wong, G. (2023, July 10). <i>GPT-4 architecture, infrastructure, training dataset, costs, vision, MoE</i>. SemiAnalysis. <a href="https://semianalysis.com/2023/07/10/gpt-4-architecture-infrastructure/" target="_blank" rel="noopener">https://semianalysis.com/2023/07/10/gpt-4-architecture-infrastructure/</a></li>
+    <li id="r-patterson">Patterson, D., Gonzalez, J., Le, Q., Liang, C., Munguia, L.-M., Rothchild, D., et al. (2021). <i>Carbon emissions and large neural network training</i> (arXiv:2104.10350). arXiv. <a href="https://arxiv.org/abs/2104.10350" target="_blank" rel="noopener">https://arxiv.org/abs/2104.10350</a></li>
+    <li id="r-toms">Shilov, A. (2024, July). Faulty Nvidia H100 GPUs and HBM3 memory caused half of the failures during Llama 3 training. <i>Tom&rsquo;s Hardware</i>. <a href="https://www.tomshardware.com/tech-industry/artificial-intelligence/faulty-nvidia-h100-gpus-and-hbm3-memory-caused-half-of-the-failures-during-llama-3-training-one-failure-every-three-hours-for-metas-16384-gpu-training-cluster" target="_blank" rel="noopener">https://www.tomshardware.com/tech-industry/artificial-intelligence/faulty-nvidia-h100-gpus-and-hbm3-memory-caused-half-of-the-failures-during-llama-3-training-one-failure-every-three-hours-for-metas-16384-gpu-training-cluster</a></li>
+    <li id="r-aiindex24">Stanford Institute for Human-Centered Artificial Intelligence. (2024). <i>The AI Index 2024 annual report</i>. Stanford University. <a href="https://hai.stanford.edu/ai-index/2024-ai-index-report" target="_blank" rel="noopener">https://hai.stanford.edu/ai-index/2024-ai-index-report</a></li>
+    <li id="r-aiindex25">Stanford Institute for Human-Centered Artificial Intelligence. (2025). <i>The AI Index 2025 annual report</i>. Stanford University. <a href="https://hai.stanford.edu/ai-index/2025-ai-index-report" target="_blank" rel="noopener">https://hai.stanford.edu/ai-index/2025-ai-index-report</a></li>
+    <li id="r-aiindex26">Stanford Institute for Human-Centered Artificial Intelligence. (2026). <i>The AI Index 2026 annual report</i>. Stanford University. <a href="https://hai.stanford.edu/ai-index/2026-ai-index-report" target="_blank" rel="noopener">https://hai.stanford.edu/ai-index/2026-ai-index-report</a></li>
+    <li id="r-wolfram">Wolfram, S. (2023, February 14). <i>What is ChatGPT doing &hellip; and why does it work?</i> <a href="https://writings.stephenwolfram.com/2023/02/what-is-chatgpt-doing-and-why-does-it-work/" target="_blank" rel="noopener">https://writings.stephenwolfram.com/2023/02/what-is-chatgpt-doing-and-why-does-it-work/</a></li>
+  </ol>
+</section>
+
+<footer>Kalyani Guggilla &middot; Built by hand for the portfolio &middot; Figures checked against the sources listed, November 2026. Cost estimates are approximate and measure different scopes.</footer>
+</main>
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script>
+(function(){
+  const NS="http://www.w3.org/2000/svg";
+  const el=(t,a,p,txt)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;if(p)p.appendChild(e);return e;};
+  const tip=document.getElementById('tip');
+  function hover(node,text){
+    node.style.cursor='default';
+    node.addEventListener('mousemove',e=>{tip.textContent=text;tip.classList.add('on');
+      const x=Math.min(e.clientX+14,window.innerWidth-tip.offsetWidth-10);tip.style.left=x+'px';tip.style.top=(e.clientY+14)+'px';});
+    node.addEventListener('mouseleave',()=>tip.classList.remove('on'));
+  }
+  function hbars(svg,rows,opt){
+    const L=opt.left,R=opt.right,W=opt.w,top=opt.top,rh=opt.rh,bh=opt.bh,max=opt.max;
+    const x=v=>L+(W-L-R)*v/max;
+    const bottom=top+rh*rows.length;
+    opt.ticks.forEach(t=>{el('line',{x1:x(t),x2:x(t),y1:top-6,y2:bottom,class:'gridl'},svg);
+      el('text',{x:x(t),y:bottom+18,'text-anchor':'middle','font-size':12,class:'muted'},svg,opt.fmt(t));});
+    el('line',{x1:L,x2:L,y1:top-6,y2:bottom,class:'axis'},svg);
+    rows.forEach((r,i)=>{
+      const y=top+i*rh+(rh-bh)/2;
+      el('text',{x:L-12,y:y+bh/2+5,'text-anchor':'end','font-size':opt.fs||14,class:'lab'},svg,r.name);
+      const g=el('g',{},svg);
+      if(r.lo!=null){
+        el('rect',{x:x(r.lo),y:y,width:x(r.hi)-x(r.lo),height:bh,rx:4,class:'range'},g);
+        el('text',{x:x(r.hi)+8,y:y+bh/2+5,'font-size':13,class:'val'},svg,r.label);
+      } else {
+        const w=Math.max(3,x(r.v)-L);
+        el('path',{d:`M${L},${y} h${w-4} a4,4 0 0 1 4,4 v${bh-8} a4,4 0 0 1 -4,4 h${-(w-4)} z`,class:'bar'},g);
+        el('text',{x:L+w+8,y:y+bh/2+5,'font-size':13,class:'val'},svg,r.label);
+      }
+      el('rect',{x:0,y:top+i*rh,width:W,height:rh,fill:'transparent'},g);
+      hover(g,r.tip);
+    });
+  }
+  hbars(document.getElementById('costChart'),[
+    {name:'Gemini 1.0 Ultra',v:191,label:'$191M',tip:'Gemini 1.0 Ultra (Google): $191M estimated compute cost. Stanford AI Index 2024.'},
+    {name:'Llama 3.1 405B',v:170,label:'$170M',tip:'Llama 3.1 405B (Meta): $170M estimated compute cost. Stanford AI Index 2025.'},
+    {name:'Grok-2',v:107,label:'~$107M',tip:'Grok-2 (xAI): about $107M estimated compute cost. Stanford AI Index 2025.'},
+    {name:'GPT-4',v:78,label:'$78M',tip:'GPT-4 (OpenAI): $78M estimated compute cost. Stanford AI Index 2024. OpenAI CEO: total over $100M.'},
+    {name:'Claude 3.5 Sonnet',lo:20,hi:50,label:'"a few $10M’s"',tip:'Claude 3.5 Sonnet (Anthropic): "a few $10M’s" per Anthropic CEO Dario Amodei (2025). The band shows an approximate range, not a measured value.'},
+    {name:'DeepSeek-V3',v:5.576,label:'$5.6M',tip:'DeepSeek-V3: $5.576M = 2.788M H800 GPU-hours × $2/hour. Developer figure for the final run only; excludes research and hardware purchase.'}
+  ],{w:900,left:160,right:120,top:16,rh:48,bh:26,max:200,ticks:[0,50,100,150,200],fmt:t=>'$'+t+'M'});
+
+  hbars(document.getElementById('shareChart'),[
+    {name:'Hardware',lo:47,hi:67,label:'47–67%',tip:'Hardware (chips, servers, interconnect): 47–67% of amortized development cost. Cottier et al., 2024.'},
+    {name:'Research staff',lo:29,hi:49,label:'29–49%',tip:'R&D staff including equity: 29–49% of development cost. Cottier et al., 2024.'},
+    {name:'Energy',lo:2,hi:6,label:'2–6%',tip:'Energy: 2–6% of development cost. Cottier et al., 2024.'}
+  ],{w:440,left:110,right:70,top:14,rh:48,bh:24,max:100,ticks:[0,25,50,75,100],fmt:t=>t+'%',fs:13});
+  // make range bars solid for the share chart (they are measured ranges, not guesses)
+  document.querySelectorAll('#shareChart .range').forEach(r=>{r.setAttribute('class','bar');});
+
+  hbars(document.getElementById('co2Chart'),[
+    {name:'Grok 4',v:72000,label:'72,000+',tip:'Grok 4 (xAI): over 72,000 t CO2e, AI Index 2026 estimate (read with caution). Epoch AI estimates about 140,000 t.'},
+    {name:'Llama 3.1 405B',v:8930,label:'8,930',tip:'Llama 3.1 405B: 8,930 t CO2e location-based (Meta model card). Market-based: 0 t.'},
+    {name:'GPT-4',v:5184,label:'5,184',tip:'GPT-4: about 5,184 t CO2e, AI Index 2026 estimate.'},
+    {name:'GPT-3 (2020)',v:552,label:'552',tip:'GPT-3: 552 t CO2e from 1,287 MWh. Patterson et al., 2021.'}
+  ],{w:440,left:110,right:70,top:14,rh:40,bh:22,max:80000,ticks:[0,20000,40000,60000,80000],fmt:t=>t===0?'0':(t/1000)+'k',fs:13});
+})();
+</script>
+</body>
+</html>
