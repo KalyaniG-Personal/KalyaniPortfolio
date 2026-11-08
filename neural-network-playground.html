@@ -114,6 +114,10 @@
   figure.shot img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:10px}
   figure.shot figcaption{font-size:14px;color:var(--ink-soft);max-width:none}
   figure.shot b{color:var(--ink)}
+  table.design td:first-child{white-space:normal;min-width:130px}
+  .runlinks{white-space:normal}
+  .runlinks a{display:inline-block;margin:0 4px 6px 0;padding:2px 9px;border:1px solid var(--line);border-radius:999px;font-size:12.5px;font-weight:600;background:var(--bg-card);white-space:nowrap}
+  .runlinks a:hover{border-color:var(--accent);text-decoration:none}
   footer{max-width:var(--maxw);margin:0 auto;color:var(--ink-faint);font-size:13px;text-align:center}
 </style>
 </head>
@@ -122,7 +126,7 @@
   <div class="nav-inner">
     <a class="brand" href="./">Kalyani Guggilla</a>
     <div class="nav-right">
-      <span class="counter" id="counter">01 / 12</span>
+      <span class="counter" id="counter">01 / 13</span>
       <button class="navbtn" id="prev" aria-label="Previous slide">&uarr;</button>
       <button class="navbtn" id="next" aria-label="Next slide">&darr;</button>
       <a class="back" href="./#projects">&larr; <span>Portfolio</span></a>
@@ -205,8 +209,8 @@
     </div>
   </div>
   <figure class="shot">
-    <img src="nn-playground-run-1neuron.jpg" alt="My Playground run: circle dataset with only 1 neuron in the first hidden layer. The boundary is a single straight line; test loss 0.446 and training loss 0.394 at epoch 311." loading="lazy">
-    <figcaption><b>My run:</b> the same circle setup as slide 2, with the first hidden layer cut from 6 neurons to 1. The whole network can now draw only one straight line, so it splits the plane in two and misclassifies most of the outer ring. After 311 epochs the test loss was stuck at 0.446 (training 0.394), against 0.034 with 6 neurons.</figcaption>
+    <img src="nn-playground-run-1neuron.jpg" alt="My Playground run: circle dataset with only 1 neuron in the first hidden layer. The boundary is one straight line; test loss 0.446 and training loss 0.394 at epoch 311." loading="lazy">
+    <figcaption><b>My run:</b> the same circle setup as slide 2, with the first hidden layer cut from 6 neurons to 1. That single neuron compresses the two inputs into one number, z = tanh(w&#8321;x&#8321; + w&#8322;x&#8322; + b). Every later layer sees only z, so any boundary it draws follows lines where z is constant. Those lines are straight and parallel. The network can make parallel bands, but it can never form the closed boundary a circle needs. Here it settled on one line and misclassified most of the outer ring: test loss 0.446 at epoch 311 (training 0.394), against 0.034 at epoch 397 with 6 neurons.</figcaption>
   </figure>
   <p class="playground"><b>In the Playground:</b> every neuron's small preview square shows the boundary it has learned. In the first hidden layer each one is a single straight split, so the number of neurons there sets how many edges the final shape can have.</p>
 </section>
@@ -277,9 +281,9 @@
   </div>
   <figure class="shot">
     <img src="nn-playground-run-lr10.jpg" alt="My Playground run: circle dataset, two hidden layers of 4 neurons, tanh, learning rate 10. The output is orange everywhere; test loss 0.984 and training loss 1.016 at epoch 396." loading="lazy">
-    <figcaption><b>My run:</b> circle data, two hidden layers of 4 neurons, tanh, learning rate 10. The loss shot up to about 1.0 in the first few epochs and stayed flat. Every step overshot so far that the tanh neurons saturated at their limits, gradients vanished, and the network gave up and labeled the whole plane orange. After 396 epochs: test loss 0.984, training loss 1.016.</figcaption>
+    <figcaption><b>My run:</b> circle data, two hidden layers of 4 neurons, tanh, learning rate 10. The loss shot up to about 1.0 in the first few epochs and stayed flat, and the network labeled the whole plane orange. A likely cause is that the large steps pushed the tanh neurons to their limits of &minus;1 and 1, where gradients are close to zero. After 396 epochs: test loss 0.984, training loss 1.016.</figcaption>
   </figure>
-  <p class="playground"><b>In the Playground</b> (which uses mini-batch gradient descent): at learning rate 1 (slide 2) the loss spiked early and then settled at a test loss of 0.034. At learning rate 10 the same kind of network never learned at all. The learning rate alone decided between a solved problem and a useless model.</p>
+  <p class="playground"><b>In the Playground</b> (which uses mini-batch gradient descent): compared with my run on slide 2, this run changed two things at once: the learning rate (1 &rarr; 10) and the layer sizes (6 + 2 &rarr; 4 + 4). The immediate jump in loss fits a learning rate that is too high, but I cannot credit the failure to the learning rate alone. Slide 11 sets out a controlled rerun.</p>
 </section>
 
 <!-- 10 FINDINGS -->
@@ -294,8 +298,8 @@
         <tr><td>Spiral, raw X&#8321;, X&#8322;</td><td><span class="chip hi">slow</span> often 1,000+ epochs</td><td>Needed 3+ layers of 6&ndash;8 neurons</td><td>Reached good loss but sometimes stalled; sensitive to learning rate</td></tr>
         <tr><td>Add engineered features</td><td><span class="chip lo">much faster</span></td><td>Circle solved with X&#8321;&sup2;, X&#8322;&sup2; and no hidden layer; XOR with X&#8321;X&#8322;</td><td>Same accuracy with a far smaller network</td></tr>
         <tr><td>Noise 0 &rarr; 40+</td><td>Longer, loss stays higher</td><td>Large networks started fitting noise</td><td>Test loss rose and the train/test gap widened</td></tr>
-        <tr><td>Circle: 6 &rarr; 1 neuron in layer 1 <span class="cite">(my runs)</span></td><td><span class="chip hi">stalled</span> loss flat after ~100 epochs</td><td>Bottleneck: one line for the whole network</td><td>Test loss 0.446 vs. 0.034 with 6 neurons</td></tr>
-        <tr><td>Learning rate 1 &rarr; 10 <span class="cite">(my runs)</span></td><td><span class="chip hi">diverged</span> loss jumped to ~1.0 at once</td><td>Unchanged (2 layers of 4)</td><td>Test loss 0.984; every point labeled one class</td></tr>
+        <tr><td>Circle: 6 &rarr; 1 neuron in layer 1 <span class="cite">(my runs)</span></td><td><span class="chip hi">stalled</span> loss flat after ~100 epochs</td><td>Inputs squeezed to one number; only parallel bands possible</td><td>Test loss 0.446 at epoch 311 vs. 0.034 at epoch 397 with 6 neurons</td></tr>
+        <tr><td>Learning rate 1 &rarr; 10 <span class="cite">(my runs)</span></td><td><span class="chip hi">failed</span> loss jumped to ~1.0 at once</td><td>Also changed (6 + 2 &rarr; 4 + 4), so not a controlled comparison</td><td>Test loss 0.984 at epoch 396; every point labeled one class</td></tr>
         <tr><td>More layers / neurons</td><td>More time per epoch</td><td>Higher capacity</td><td>Helped on spiral; on simple data, no gain and more overfitting</td></tr>
         <tr><td>Lower training ratio (e.g. 30%)</td><td>Fast per epoch</td><td>Unchanged</td><td>Worse generalization, especially with noise</td></tr>
       </tbody>
@@ -304,9 +308,32 @@
   <p>The pattern: <b style="color:var(--ink)">match the model to the problem.</b> Good input features did more than extra layers, and extra capacity paid off only when the data was genuinely complex.</p>
 </section>
 
-<!-- 11 SUMMARY -->
+<!-- 11 REDESIGN -->
 <section class="slide" id="s11">
-  <div class="eyebrow"><span>Summary</span><span class="num">11</span></div>
+  <div class="eyebrow"><span>Experiment design</span><span class="num">11</span></div>
+  <h2>Redesigning the runs: separating architecture from learning rate</h2>
+  <p>My first three runs did not isolate one factor at a time. Run 3 changed both the learning rate and the layer sizes compared with Run 1, and the runs stopped at different epochs (397, 311 and 396). The redesign below changes one thing per comparison and reads every run at the same checkpoints.</p>
+  <div class="grid three">
+    <div class="tile"><span class="tag">HELD CONSTANT</span><h3>Every run</h3><p>Circle data, noise 0, 50% training data, batch size 10, inputs X&#8321; and X&#8322; only, tanh, no regularization. A fixed seed in each link keeps the dataset identical. I press Reset (never Regenerate) between repeats.</p></div>
+    <div class="tile"><span class="tag">MEASURED</span><h3>Same checkpoints</h3><p>Test and training loss at epochs 100, 250 and 500, plus the shape of the boundary. Each setting runs three times from new random starting weights, and I report the median.</p></div>
+    <div class="tile"><span class="tag">QUESTION</span><h3>What caused Run 3?</h3><p>Experiment C crosses Run 1's and Run 3's settings. If both learning-rate-10 cells fail and both learning-rate-1 cells succeed, the learning rate is the cause.</p></div>
+  </div>
+  <div class="tablewrap">
+    <table class="design">
+      <thead><tr><th>Experiment</th><th>Fixed</th><th>Varied</th><th>Settings (open in Playground)</th><th>Prediction</th></tr></thead>
+      <tbody>
+        <tr><td>A. Architecture</td><td>Learning rate 0.03; 2nd layer = 2</td><td>Neurons in layer 1</td><td class="runlinks"><a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=0.03&regularizationRate=0&noise=0&networkShape=1,2&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">1</a> <a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=0.03&regularizationRate=0&noise=0&networkShape=2,2&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">2</a> <a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=0.03&regularizationRate=0&noise=0&networkShape=3,2&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">3</a> <a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=0.03&regularizationRate=0&noise=0&networkShape=4,2&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">4</a> <a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=0.03&regularizationRate=0&noise=0&networkShape=6,2&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">6</a></td><td>1 and 2 neurons leave the boundary open. 3 is the smallest first layer that can enclose the center.</td></tr>
+        <tr><td>B. Learning rate</td><td>Layers 6 + 2</td><td>Learning rate</td><td class="runlinks"><a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=0.003&regularizationRate=0&noise=0&networkShape=6,2&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">0.003</a> <a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=0.03&regularizationRate=0&noise=0&networkShape=6,2&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">0.03</a> <a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=0.3&regularizationRate=0&noise=0&networkShape=6,2&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">0.3</a> <a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=1&regularizationRate=0&noise=0&networkShape=6,2&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">1</a> <a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=3&regularizationRate=0&noise=0&networkShape=6,2&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">3</a> <a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=10&regularizationRate=0&noise=0&networkShape=6,2&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">10</a></td><td>0.003 is still high at epoch 100. 0.03&ndash;0.3 converge smoothly. 3 and 10 are unstable or fail.</td></tr>
+        <tr><td>C. Diagnose Run 3 (2 &times; 2)</td><td>Everything else</td><td>Layers &times; learning rate</td><td class="runlinks"><a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=1&regularizationRate=0&noise=0&networkShape=6,2&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">6+2 · 1</a> <a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=10&regularizationRate=0&noise=0&networkShape=6,2&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">6+2 · 10</a> <a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=1&regularizationRate=0&noise=0&networkShape=4,4&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">4+4 · 1</a> <a href="https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=10&regularizationRate=0&noise=0&networkShape=4,4&seed=0.80000&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false" target="_blank" rel="noopener">4+4 · 10</a></td><td>Learning rate drives the failure: both rate-10 cells fail and both rate-1 cells solve the circle.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="tag">Predictions are hypotheses to test. Results will replace them once the runs are complete.</p>
+</section>
+
+<!-- 12 SUMMARY -->
+<section class="slide" id="s12">
+  <div class="eyebrow"><span>Summary</span><span class="num">12</span></div>
   <h2>Why visualizing neural networks matters</h2>
   <div class="grid three">
     <div class="tile"><h3>It makes the abstract concrete</h3><p>Weights, activations and loss are numbers on paper. Watching lines thicken and the boundary bend shows what each one actually does.</p></div>
@@ -317,15 +344,16 @@
   <ul class="points">
     <li><b>Features beat depth.</b> One squared feature replaced an entire hidden layer on the circle dataset.</li>
     <li><b>Non-linearity is the point.</b> Without an activation function, depth adds nothing.</li>
-    <li><b>Learning rate is the first thing to tune.</b> It decided whether training crawled, converged or diverged.</li>
+    <li><b>Change one thing at a time.</b> My learning-rate run also changed the layer sizes, so I could not credit its failure to the learning rate alone. Controlled reruns, read at the same epochs, fix that.</li>
+    <li><b>Capacity has a floor.</b> One neuron in the first layer reduces two inputs to one number. No later layer can turn that into a closed boundary.</li>
     <li><b>Watch test loss, not training loss.</b> Noise and oversized networks hide overfitting behind a falling training curve.</li>
     <li><b>Same habit as data engineering:</b> change one variable, observe, and verify against data the system has not seen.</li>
   </ul>
 </section>
 
-<!-- 12 REFERENCES -->
-<section class="slide" id="s12">
-  <div class="eyebrow"><span>References</span><span class="num">12</span></div>
+<!-- 13 REFERENCES -->
+<section class="slide" id="s13">
+  <div class="eyebrow"><span>References</span><span class="num">13</span></div>
   <h2>References</h2>
   <ol class="refs">
     <li>Goodfellow, I., Bengio, Y., &amp; Courville, A. (2016). <i>Deep learning</i>. MIT Press. <a href="https://www.deeplearningbook.org/" target="_blank" rel="noopener">https://www.deeplearningbook.org/</a></li>
@@ -338,7 +366,7 @@
     <li>Smilkov, D., Carter, S., Sculley, D., Vi&eacute;gas, F. B., &amp; Wattenberg, M. (2017). <i>Direct-manipulation visualization of deep networks</i> (arXiv:1708.03788). arXiv. <a href="https://arxiv.org/abs/1708.03788" target="_blank" rel="noopener">https://arxiv.org/abs/1708.03788</a></li>
     <li>TensorFlow. (n.d.). <i>A neural network playground</i> [Interactive web application]. Retrieved October 31, 2026, from <a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">https://playground.tensorflow.org/</a></li>
   </ol>
-  <p class="tag" style="margin-top:auto">APA 7th edition. Experiment observations on slides 4&ndash;10 are my own runs in the Playground.</p>
+  <p class="tag" style="margin-top:auto">APA 7th edition. Screenshots and table rows marked &ldquo;my runs&rdquo; come from my own Playground sessions.</p>
 </section>
 
 <footer>Kalyani Guggilla &middot; Built by hand for the portfolio &middot; Experiments run in the <a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">TensorFlow Neural Network Playground</a></footer>
