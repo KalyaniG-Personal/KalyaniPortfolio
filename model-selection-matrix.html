@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pre-trained Model Selection: A Decision Matrix | Kalyani Guggilla</title>
+<meta name="description" content="A decision matrix comparing pre-trained models across NLP/Generative AI, Computer Vision and tabular data on size, accuracy, speed and explainability.">
+<style>
+  :root{
+    --ink:#1c2430; --muted:#5b6675; --line:#e3e7ee; --bg:#fbfaf7; --card:#ffffff;
+    --accent:#0f5c72; --accent-soft:#e6f1f4;
+    --good:#1f7a4d; --good-bg:#e3f3ea;
+    --mid:#9a6a00;  --mid-bg:#fbf0d6;
+    --bad:#b3372f;  --bad-bg:#f8e2df;
+    --nlp:#6b4fa0; --cv:#1f7a8c; --tab:#a0522d;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+       color:var(--ink);background:var(--bg);line-height:1.6;font-size:17px}
+  a{color:var(--accent)}
+  header.hero{background:linear-gradient(135deg,#1c2a3c 0%,#0f5c72 100%);color:#fff;padding:56px 24px 48px}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+  .hero .eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:13px;opacity:.8;margin:0 0 10px}
+  .hero h1{font-size:clamp(30px,4.5vw,46px);line-height:1.15;margin:0 0 14px;font-weight:700}
+  .hero p.lede{font-size:19px;max-width:760px;opacity:.92;margin:0}
+  .hero .meta{margin-top:22px;font-size:14px;opacity:.8}
+  nav.toc{position:sticky;top:0;z-index:10;background:rgba(251,250,247,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  nav.toc ul{list-style:none;margin:0 auto;padding:10px 24px;display:flex;gap:6px 20px;flex-wrap:wrap;max-width:1120px;font-size:14px}
+  nav.toc a{text-decoration:none;color:var(--muted)} nav.toc a:hover{color:var(--accent)}
+  section{padding:48px 0 8px}
+  h2{font-size:28px;margin:0 0 6px} h2 .num{color:var(--accent);margin-right:8px}
+  h3{font-size:20px;margin:28px 0 8px}
+  p.sub{color:var(--muted);margin:0 0 22px;max-width:780px}
+  .grid{display:grid;gap:18px}
+  .g3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+  .card h4{margin:0 0 6px;font-size:17px}
+  .card p{margin:0;color:var(--muted);font-size:15.5px}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;letter-spacing:.02em}
+  .d-nlp{background:#efe9f8;color:var(--nlp)} .d-cv{background:#e2f2f5;color:var(--cv)} .d-tab{background:#f6e9e1;color:var(--tab)}
+  .callout{border-left:4px solid var(--accent);background:var(--accent-soft);padding:14px 18px;border-radius:0 10px 10px 0;margin:20px 0}
+
+  /* Matrix */
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:14px;color:var(--muted);margin:0 0 14px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+  table{border-collapse:collapse;width:100%;min-width:1000px;font-size:14.5px}
+  caption{text-align:left;padding:14px 16px;font-weight:600;color:var(--muted);font-size:13px;caption-side:bottom;border-top:1px solid var(--line)}
+  th,td{padding:12px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+  thead th{background:#f3f5f8;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);position:sticky;top:0}
+  tbody tr:hover{background:#fafbfd}
+  tr.domain-row td{background:#f7f7f4;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px 12px}
+  td.model b{display:block;font-size:15px}
+  td.model small{color:var(--muted)}
+  .cell{display:flex;flex-direction:column;gap:4px}
+  .rate{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13px;padding:3px 9px;border-radius:7px;width:max-content}
+  .rate.good{background:var(--good-bg);color:var(--good)}
+  .rate.mid{background:var(--mid-bg);color:var(--mid)}
+  .rate.bad{background:var(--bad-bg);color:var(--bad)}
+  .dots{letter-spacing:1px;font-size:12px}
+  .fact{color:var(--muted);font-size:13px;line-height:1.4}
+  td.score{font-weight:700;font-size:18px;text-align:center}
+
+  /* Weights */
+  .weights{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 26px;margin:6px 0 18px}
+  .weights label{font-size:14px;font-weight:600;display:flex;justify-content:space-between}
+  .weights input{width:100%;accent-color:var(--accent)}
+  .presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .presets button{font:inherit;font-size:13.5px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;cursor:pointer;color:var(--ink)}
+  .presets button:hover,.presets button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .winners{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:16px}
+  .winner{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+  .winner .k{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .winner .v{font-size:19px;font-weight:700;margin-top:2px}
+  .bar{height:6px;border-radius:4px;background:var(--accent);margin-top:8px}
+
+  /* Chart */
+  figure{margin:0}
+  figcaption{font-size:13.5px;color:var(--muted);margin-top:8px}
+  svg text{font-family:inherit}
+
+  ul.tight{margin:8px 0 0;padding-left:20px} ul.tight li{margin:4px 0;font-size:15.5px}
+  .pc{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+  .pc div{font-size:14.5px} .pc strong{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  .pc .pro strong{color:var(--good)} .pc .con strong{color:var(--bad)}
+  table.rec{min-width:0}
+  footer{margin-top:56px;padding:30px 0 50px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+  ol.sources{font-size:14px;color:var(--muted);padding-left:20px} ol.sources li{margin:5px 0}
+  @media (max-width:640px){body{font-size:16px}.pc{grid-template-columns:1fr}}
+  @media print{nav.toc{display:none}header.hero{background:#0f5c72;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Portfolio Artifact · AI/ML Model Evaluation</p>
+    <h1>Choosing the Right Pre-trained Model: Size, Accuracy, Speed &amp; Explainability</h1>
+    <p class="lede">A decision matrix comparing ten pre-trained models across NLP/Generative AI, Computer Vision and tabular data, with recommendations for real deployment scenarios.</p>
+    <p class="meta">Kalyani Guggilla · November 2026 · <a href="index.html#projects" style="color:#fff">← Back to portfolio</a></p>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <ul>
+    <li><a href="#intro">1. Introduction</a></li>
+    <li><a href="#method">2. Methodology</a></li>
+    <li><a href="#matrix">3. Decision Matrix</a></li>
+    <li><a href="#weights">4. Interactive Weighting</a></li>
+    <li><a href="#analysis">5. Analysis &amp; Recommendations</a></li>
+    <li><a href="#conclusion">6. Conclusion</a></li>
+    <li><a href="#rationale">7. Design Rationale</a></li>
+  </ul>
+</nav>
+
+<main class="wrap">
+
+<!-- 1. INTRODUCTION -->
+<section id="intro">
+  <h2><span class="num">1</span>Introduction</h2>
+  <p class="sub">There's no single "best" model. The right choice depends on what the system must do, where it runs, and who needs to understand its decisions.</p>
+  <p>Modern AI systems are rarely trained from scratch. Teams start from <strong>pre-trained models</strong> and adapt them. These models vary hugely in size, from a 3-million-parameter image classifier that runs on a phone to frontier language models served from data centres. Bigger usually means more accurate. But bigger also costs more memory, energy and money, adds latency, and is harder to <strong>explain</strong>.</p>
+  <p>Explainability matters because models make decisions that affect people: loan approvals, medical image triage, content moderation. Regulators (for example, the EU AI Act's transparency duties for high-risk systems), auditors and end users increasingly expect to know <em>why</em> a model produced an output. A slightly less accurate model whose reasoning can be inspected is often the better business choice than a black box. This matters most in regulated domains.</p>
+  <div class="grid g3" style="margin-top:22px">
+    <div class="card"><h4>📦 Model Size</h4><p>Parameters and memory footprint drive hardware cost, whether a model fits on-device, and energy use.</p></div>
+    <div class="card"><h4>🎯 Accuracy</h4><p>Performance on standard benchmarks for the domain: MMLU and GLUE for language, ImageNet top-1 for vision, AUC for tabular data.</p></div>
+    <div class="card"><h4>⚡ Speed</h4><p>Inference latency and throughput. These decide real-time feasibility and serving cost per prediction.</p></div>
+    <div class="card"><h4>🔍 Explainability</h4><p>How easily a human can understand why the model produced an output, using native tools or post-hoc methods such as SHAP and Grad-CAM.</p></div>
+  </div>
+</section>
+
+<!-- 2. METHODOLOGY -->
+<section id="method">
+  <h2><span class="num">2</span>Methodology</h2>
+  <p class="sub">How the models were chosen, where the numbers came from, and how they were turned into comparable ratings.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h4>Model selection</h4>
+      <p>I chose ten widely used models that span three domains. Within each domain I picked a <em>large / high-accuracy</em> option and a <em>small / efficient</em> option so the trade-off is visible:</p>
+      <ul class="tight">
+        <li><span class="pill d-nlp">NLP / GenAI</span> GPT-4o, Llama 3.1 8B, BERT-base, DistilBERT</li>
+        <li><span class="pill d-cv">Vision</span> MobileNetV3-Large, EfficientNet-B0, EfficientNet-B7</li>
+        <li><span class="pill d-tab">Tabular</span> XGBoost, LightGBM, Random Forest</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Data sources</h4>
+      <p>Figures come from the original research papers, official model cards and vendor documentation (see <a href="#sources">Sources</a>). Generative AI tools were used to brainstorm candidate models. Every number was then checked against a primary source.</p>
+    </div>
+    <div class="card">
+      <h4>Rating scale (1–5)</h4>
+      <p>Each criterion is rated <strong>1 (weak) to 5 (strong)</strong>, where higher is always better for deployment. So a <em>smaller</em> model scores higher on "Size". Ratings are colour-coded:
+      <span class="rate good">4–5 Strong</span> <span class="rate mid">3 Moderate</span> <span class="rate bad">1–2 Weak</span></p>
+    </div>
+    <div class="card">
+      <h4>Important caveat</h4>
+      <p>Accuracy is rated <strong>within each domain</strong>. An ImageNet score can't be compared with an MMLU score. Speed figures depend heavily on hardware, batch size and sequence length, so they're treated as relative tiers rather than exact numbers.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3. DECISION MATRIX -->
+<section id="matrix">
+  <h2><span class="num">3</span>Decision Matrix</h2>
+  <p class="sub">Each cell shows a colour-coded rating plus the underlying evidence. The final column is an unweighted average. Adjust the weights in Section 4 to fit a specific scenario.</p>
+  <div class="legend" aria-hidden="true">
+    <span><span class="rate good">●●●●○ Strong</span></span>
+    <span><span class="rate mid">●●●○○ Moderate</span></span>
+    <span><span class="rate bad">●○○○○ Weak</span></span>
+  </div>
+  <div class="table-scroll">
+    <table id="matrixTable">
+      <thead>
+        <tr>
+          <th style="width:15%">Model</th>
+          <th style="width:16%">📦 Size</th>
+          <th style="width:16%">🎯 Accuracy</th>
+          <th style="width:15%">⚡ Speed</th>
+          <th style="width:15%">🔍 Explainability</th>
+          <th style="width:17%">➕ Other considerations</th>
+          <th style="width:6%">Avg</th>
+        </tr>
+      </thead>
+      <tbody id="matrixBody"></tbody>
+      <caption>Ratings: 5 = best for deployment on that criterion. Accuracy is compared only within a domain. "Undisclosed" means the vendor hasn't published the figure.</caption>
+    </table>
+  </div>
+
+  <h3>What each criterion means</h3>
+  <div class="grid g2">
+    <div class="card"><h4>📦 Model Size</h4><p>Based on parameter count and the approximate weight footprint (FP32 for small models, FP16 for LLMs). Models that fit on a phone or edge device score 5. Models that need multi-GPU servers or are cloud-only score 1. For tree models, size depends on the number and depth of trees, so it's rated for typical configurations.</p></div>
+    <div class="card"><h4>🎯 Accuracy</h4><p>Based on the standard benchmark for each domain. Language: MMLU (general knowledge and reasoning) or GLUE (language understanding). Vision: ImageNet top-1. Tabular: results from published benchmarks, where gradient-boosted trees consistently lead on medium-sized datasets.</p></div>
+    <div class="card"><h4>⚡ Speed</h4><p>Relative inference latency on typical hardware. On-device or CPU inference in milliseconds scores 5. Multi-second generation or very high compute (FLOPs) scores 1. For hosted APIs, network round-trips and token-by-token generation dominate.</p></div>
+    <div class="card"><h4>🔍 Explainability</h4><p>Tree ensembles score highest because exact SHAP values and feature importances are cheap to compute. CNNs support saliency maps such as Grad-CAM. Encoder models such as BERT support attention and attribution analysis. Large generative models score lowest: their outputs can include a rationale, but that isn't a faithful explanation of the model's internals.</p></div>
+  </div>
+</section>
+
+<!-- 4. WEIGHTING -->
+<section id="weights">
+  <h2><span class="num">4</span>Interactive Weighting</h2>
+  <p class="sub">A decision matrix only becomes a decision when you weight the criteria by what your project values. Pick a preset or drag the sliders to see which model wins in each domain.</p>
+  <div class="presets" role="group" aria-label="Scenario presets">
+    <button data-w="1,1,1,1" class="on">Balanced</button>
+    <button data-w="5,2,5,1">📱 Mobile / edge app</button>
+    <button data-w="1,3,1,5">🏦 Regulated (finance, health)</button>
+    <button data-w="1,5,1,1">🏆 Max accuracy</button>
+    <button data-w="2,2,5,1">⏱ Real-time, high volume</button>
+  </div>
+  <div class="weights">
+    <div><label for="w0">📦 Size <output id="o0">1</output></label><input id="w0" type="range" min="0" max="5" value="1"></div>
+    <div><label for="w1">🎯 Accuracy <output id="o1">1</output></label><input id="w1" type="range" min="0" max="5" value="1"></div>
+    <div><label for="w2">⚡ Speed <output id="o2">1</output></label><input id="w2" type="range" min="0" max="5" value="1"></div>
+    <div><label for="w3">🔍 Explainability <output id="o3">1</output></label><input id="w3" type="range" min="0" max="5" value="1"></div>
+  </div>
+  <div class="winners" id="winners" aria-live="polite"></div>
+</section>
+
+<!-- 5. ANALYSIS -->
+<section id="analysis">
+  <h2><span class="num">5</span>Analysis &amp; Recommendations</h2>
+  <p class="sub">Strengths and weaknesses within each domain, and the model I'd recommend for common scenarios.</p>
+
+  <h3><span class="pill d-nlp">NLP / Generative AI</span></h3>
+  <div class="grid g2">
+    <div class="card"><h4>GPT-4o (hosted frontier LLM)</h4>
+      <div class="pc"><div class="pro"><strong>Strengths</strong>Top accuracy (88.7% MMLU), multimodal, no infrastructure to manage, fast to integrate through an API.</div>
+      <div class="con"><strong>Weaknesses</strong>Size and internals undisclosed. Data leaves your environment. Per-token cost. Lowest explainability.</div></div></div>
+    <div class="card"><h4>Llama 3.1 8B (open-weight LLM)</h4>
+      <div class="pc"><div class="pro"><strong>Strengths</strong>Self-hostable for data privacy, can be fine-tuned, fits one GPU (~16 GB at FP16, less when quantised).</div>
+      <div class="con"><strong>Weaknesses</strong>Noticeably lower accuracy (69.4% MMLU). You run and secure the infrastructure.</div></div></div>
+    <div class="card"><h4>BERT-base (encoder)</h4>
+      <div class="pc"><div class="pro"><strong>Strengths</strong>110M parameters, strong on classification and extraction once fine-tuned, well studied with mature attribution tools.</div>
+      <div class="con"><strong>Weaknesses</strong>Can't generate text. Needs labelled data to fine-tune. 512-token context limit.</div></div></div>
+    <div class="card"><h4>DistilBERT (distilled encoder)</h4>
+      <div class="pc"><div class="pro"><strong>Strengths</strong>40% smaller and 60% faster than BERT while keeping about 97% of its language-understanding performance.</div>
+      <div class="con"><strong>Weaknesses</strong>Small accuracy loss. Same task limits as BERT.</div></div></div>
+  </div>
+
+  <h3><span class="pill d-cv">Computer Vision</span></h3>
+  <div class="grid g2">
+    <div class="card">
+      <figure>
+        <svg viewBox="0 0 520 300" role="img" aria-labelledby="chartTitle chartDesc" style="width:100%;height:auto">
+          <title id="chartTitle">Vision models: parameters versus ImageNet accuracy</title>
+          <desc id="chartDesc">MobileNetV3-Large has 5.4 million parameters and 75.2% accuracy. EfficientNet-B0 has 5.3 million and 77.1%. ResNet-50 has 25.6 million and 76.1%. EfficientNet-B7 has 66 million and 84.3%.</desc>
+          <!-- axes: x log scale 1M..100M => 60..490 ; y 70..86 => 260..30 -->
+          <g stroke="#e3e7ee">
+            <line x1="60" y1="260" x2="490" y2="260"/><line x1="60" y1="202.5" x2="490" y2="202.5"/>
+            <line x1="60" y1="145" x2="490" y2="145"/><line x1="60" y1="87.5" x2="490" y2="87.5"/><line x1="60" y1="30" x2="490" y2="30"/>
+          </g>
+          <g font-size="11" fill="#5b6675" text-anchor="end">
+            <text x="52" y="264">70%</text><text x="52" y="206">74%</text><text x="52" y="149">78%</text><text x="52" y="91">82%</text><text x="52" y="34">86%</text>
+          </g>
+          <g font-size="11" fill="#5b6675" text-anchor="middle">
+            <text x="60" y="278">1M</text><text x="203" y="278">3M</text><text x="275" y="278">10M</text><text x="418" y="278">50M</text><text x="490" y="278">100M</text>
+          </g>
+          <text x="275" y="296" font-size="12" fill="#5b6675" text-anchor="middle">Parameters (log scale)</text>
+          <text x="14" y="145" font-size="12" fill="#5b6675" text-anchor="middle" transform="rotate(-90 14 145)">ImageNet top-1</text>
+          <!-- points: x = 60 + 215*log10(p) ; y = 260 - (acc-70)*14.375 -->
+          <g>
+            <circle cx="217.5" cy="185.3" r="7" fill="#1f7a8c"/><text x="226" y="200" font-size="12" fill="#1c2430">MobileNetV3-L</text>
+            <circle cx="215.7" cy="157.9" r="7" fill="#1f7a8c"/><text x="160" y="148" font-size="12" fill="#1c2430">EfficientNet-B0</text>
+            <circle cx="362.8" cy="172.3" r="7" fill="#9aa5b4"/><text x="372" y="176" font-size="12" fill="#5b6675">ResNet-50 (baseline)</text>
+            <circle cx="451.2" cy="55.6" r="7" fill="#1f7a8c"/><text x="443" y="44" font-size="12" fill="#1c2430" text-anchor="end">EfficientNet-B7</text>
+          </g>
+        </svg>
+        <figcaption>EfficientNet-B0 matches ResNet-50's accuracy with about 5× fewer parameters. Moving up to B7 buys +7 points of accuracy for 12× the parameters and about 100× the compute.</figcaption>
+      </figure>
+    </div>
+    <div class="card">
+      <h4>MobileNetV3-Large</h4>
+      <div class="pc"><div class="pro"><strong>Strengths</strong>Built for phones. About 51 ms on a 2016 mobile CPU, 5.4M parameters.</div><div class="con"><strong>Weaknesses</strong>Lowest accuracy of the group (75.2%).</div></div>
+      <h4 style="margin-top:16px">EfficientNet-B0</h4>
+      <div class="pc"><div class="pro"><strong>Strengths</strong>Best accuracy per parameter (77.1% with 5.3M parameters).</div><div class="con"><strong>Weaknesses</strong>Some operations (such as depthwise convolutions) run less efficiently on certain accelerators.</div></div>
+      <h4 style="margin-top:16px">EfficientNet-B7</h4>
+      <div class="pc"><div class="pro"><strong>Strengths</strong>Highest accuracy (84.3%).</div><div class="con"><strong>Weaknesses</strong>37 GFLOPs and 600 px inputs. Slow and costly for real-time use.</div></div>
+    </div>
+  </div>
+
+  <h3><span class="pill d-tab">Tabular Data</span></h3>
+  <div class="grid g3">
+    <div class="card"><h4>LightGBM</h4><div class="pc"><div class="pro"><strong>Strengths</strong>Fastest training and inference. Handles large datasets and categorical features natively.</div><div class="con"><strong>Weaknesses</strong>Leaf-wise growth can overfit small datasets without tuning.</div></div></div>
+    <div class="card"><h4>XGBoost</h4><div class="pc"><div class="pro"><strong>Strengths</strong>Top accuracy, robust regularisation, large community, GPU support.</div><div class="con"><strong>Weaknesses</strong>Usually a little slower to train than LightGBM. Many hyperparameters to tune.</div></div></div>
+    <div class="card"><h4>Random Forest</h4><div class="pc"><div class="pro"><strong>Strengths</strong>Strong results with little tuning, resistant to overfitting, easy to explain.</div><div class="con"><strong>Weaknesses</strong>Deep forests use a lot of memory and are slower at inference. Usually a little less accurate than boosted trees.</div></div></div>
+  </div>
+  <div class="callout">Pre-trained deep models have changed vision and language. Structured tabular data is different: gradient-boosted trees still match or beat deep learning on medium-sized datasets (Grinsztajn et al., 2022). They're also cheaper and far easier to explain.</div>
+
+  <h3>Scenario recommendations</h3>
+  <div class="table-scroll">
+    <table class="rec">
+      <thead><tr><th>Scenario</th><th>Domain</th><th>Recommended model</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Customer-support chatbot drafting answers</td><td><span class="pill d-nlp">NLP</span></td><td><b>GPT-4o</b> (or similar hosted LLM)</td><td>Generation quality matters most. A human reviews the output, so low explainability is acceptable.</td></tr>
+        <tr><td>Chat assistant on confidential internal data</td><td><span class="pill d-nlp">NLP</span></td><td><b>Llama 3.1 8B</b>, self-hosted</td><td>Data never leaves your network. Can be fine-tuned on in-house terminology.</td></tr>
+        <tr><td>Classifying support tickets or sentiment at scale</td><td><span class="pill d-nlp">NLP</span></td><td><b>DistilBERT</b> (fine-tuned)</td><td>Classification doesn't need a generative model. Cheap, fast on CPU, and auditable.</td></tr>
+        <tr><td>Real-time object recognition in a mobile app</td><td><span class="pill d-cv">Vision</span></td><td><b>MobileNetV3</b></td><td>Fits on-device and meets millisecond latency targets without a network connection.</td></tr>
+        <tr><td>General image classification in the cloud</td><td><span class="pill d-cv">Vision</span></td><td><b>EfficientNet-B0 to B3</b></td><td>Best balance of accuracy and compute. Scale up within the family as your budget allows.</td></tr>
+        <tr><td>Offline medical-image screening (accuracy first)</td><td><span class="pill d-cv">Vision</span></td><td><b>EfficientNet-B7</b> + Grad-CAM</td><td>Latency isn't critical. Saliency maps let clinicians see which image regions drove each result.</td></tr>
+        <tr><td>Credit-risk or loan-approval scoring</td><td><span class="pill d-tab">Tabular</span></td><td><b>XGBoost</b> + SHAP</td><td>High accuracy with per-decision explanations that can back adverse-action notices.</td></tr>
+        <tr><td>Real-time fraud scoring on millions of transactions</td><td><span class="pill d-tab">Tabular</span></td><td><b>LightGBM</b></td><td>Fastest inference and training, so the model can be retrained often as fraud patterns change.</td></tr>
+        <tr><td>Quick baseline or small team with little ML expertise</td><td><span class="pill d-tab">Tabular</span></td><td><b>Random Forest</b></td><td>Works well out of the box with minimal tuning.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 6. CONCLUSION -->
+<section id="conclusion">
+  <h2><span class="num">6</span>Conclusion</h2>
+  <div class="grid g3">
+    <div class="card"><h4>1 · Accuracy has diminishing returns</h4><p>In every domain, the last few points of accuracy cost several times more size and compute (EfficientNet-B0 → B7: +7 points for about 100× the FLOPs). Start with the smallest model that meets the requirement.</p></div>
+    <div class="card"><h4>2 · Explainability shrinks as models grow</h4><p>Tree models offer exact, per-prediction explanations. CNNs offer approximate visual ones. Large LLMs offer almost none. In regulated settings this can matter more than accuracy.</p></div>
+    <div class="card"><h4>3 · Match the model to the task</h4><p>Not every language problem needs a generative LLM, and not every problem needs deep learning. DistilBERT for classification, or gradient-boosted trees for tabular data, often wins on every criterion except headline accuracy.</p></div>
+  </div>
+  <p style="margin-top:20px">The practical takeaway is to set requirements first: a latency budget, a deployment target, a compliance need. Then weight the decision matrix by those requirements and pick the simplest model that clears every bar. That keeps systems cheaper, faster, easier to audit and easier to trust.</p>
+</section>
+
+<!-- 7. DESIGN RATIONALE -->
+<section id="rationale">
+  <h2><span class="num">7</span>Design Rationale</h2>
+  <div class="grid g2">
+    <div class="card"><h4>Visual encoding</h4><p>A traffic-light colour scheme (green, amber, red) gives an at-a-glance read. Every colour is paired with a dot rating and a text label, so the matrix still works for colour-blind readers and in greyscale print. Emoji icons give each criterion a quick visual anchor.</p></div>
+    <div class="card"><h4>Evidence in every cell</h4><p>Each rating sits beside the raw figure it came from (parameters, benchmark score, latency). Readers can check the judgement rather than having to trust it.</p></div>
+    <div class="card"><h4>Interactive weighting</h4><p>A static matrix hides the fact that "best" depends on priorities. The weight sliders and scenario presets make that explicit and show how the recommendation changes.</p></div>
+    <div class="card"><h4>Accessible, dependency-free build</h4><p>One HTML file with no external libraries. It uses semantic headings, labelled controls, an accessible chart description, responsive layout and a print stylesheet. It loads instantly on GitHub Pages.</p></div>
+  </div>
+</section>
+
+<section id="sources">
+  <h2>Sources</h2>
+  <ol class="sources">
+    <li>OpenAI (2024). <a href="https://openai.com/index/hello-gpt-4o/">Hello GPT-4o</a>: benchmark results including MMLU.</li>
+    <li>Meta (2024). <a href="https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct">Llama 3.1 8B Instruct model card</a>.</li>
+    <li>Devlin et al. (2019). <a href="https://arxiv.org/abs/1810.04805">BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding</a>.</li>
+    <li>Sanh et al. (2019). <a href="https://arxiv.org/abs/1910.01108">DistilBERT, a distilled version of BERT</a>.</li>
+    <li>Howard et al. (2019). <a href="https://arxiv.org/abs/1905.02244">Searching for MobileNetV3</a>.</li>
+    <li>Tan &amp; Le (2019). <a href="https://arxiv.org/abs/1905.11946">EfficientNet: Rethinking Model Scaling for CNNs</a>.</li>
+    <li>He et al. (2016). <a href="https://arxiv.org/abs/1512.03385">Deep Residual Learning for Image Recognition</a> (ResNet-50 baseline, torchvision weights).</li>
+    <li>Chen &amp; Guestrin (2016). <a href="https://arxiv.org/abs/1603.02754">XGBoost: A Scalable Tree Boosting System</a>.</li>
+    <li>Ke et al. (2017). <a href="https://papers.nips.cc/paper/6907-lightgbm-a-highly-efficient-gradient-boosting-decision-tree">LightGBM: A Highly Efficient Gradient Boosting Decision Tree</a>.</li>
+    <li>Breiman (2001). Random Forests. <em>Machine Learning</em>, 45, 5–32.</li>
+    <li>Grinsztajn, Oyallon &amp; Varoquaux (2022). <a href="https://arxiv.org/abs/2207.08815">Why do tree-based models still outperform deep learning on tabular data?</a></li>
+    <li>Lundberg et al. (2020). <a href="https://www.nature.com/articles/s42256-019-0138-9">From local explanations to global understanding with explainable AI for trees</a> (TreeSHAP).</li>
+    <li>Selvaraju et al. (2017). <a href="https://arxiv.org/abs/1610.02391">Grad-CAM: Visual Explanations from Deep Networks</a>.</li>
+  </ol>
+</section>
+
+<footer>
+  © 2026 Kalyani Guggilla · Built as part of an AI/ML professional portfolio · <a href="index.html#projects">Back to portfolio</a>
+</footer>
+</main>
+
+<script>
+// ---- Data: ratings 1-5 (higher = better for deployment) ----
+const MODELS = [
+  {d:"NLP / Generative AI", cls:"d-nlp"},
+  {name:"GPT-4o", sub:"OpenAI · hosted LLM", r:[1,5,3,1],
+   f:["Undisclosed; cloud-only","88.7% MMLU","API latency; streams tokens","Outputs can include rationales; internals opaque"],
+   o:"Easiest to integrate (REST API); per-token cost; data leaves your environment"},
+  {name:"Llama 3.1 8B", sub:"Meta · open-weight LLM", r:[2,4,3,2],
+   f:["8B params · ~16 GB FP16","69.4% MMLU (instruct)","Needs a GPU for interactive speed","Open weights allow probing, but still hard"],
+   o:"Self-host for privacy; fine-tunable; 128K context"},
+  {name:"BERT-base", sub:"Google · encoder", r:[4,3,4,3],
+   f:["110M params · ~440 MB","GLUE 79.6 · SQuAD v1.1 F1 88.5","Tens of ms per sequence on CPU","Attention and attribution tools mature"],
+   o:"Understanding only (no generation); needs labelled data to fine-tune"},
+  {name:"DistilBERT", sub:"Hugging Face · distilled", r:[5,3,5,3],
+   f:["66M params · ~260 MB","~97% of BERT's GLUE score","60% faster than BERT","Same tooling as BERT"],
+   o:"Low energy use; good for CPU serving at scale"},
+  {d:"Computer Vision", cls:"d-cv"},
+  {name:"MobileNetV3-Large", sub:"Google · mobile CNN", r:[5,3,5,3],
+   f:["5.4M params · ~22 MB","75.2% ImageNet top-1","~51 ms on Pixel 1 CPU","Grad-CAM saliency maps"],
+   o:"Built for on-device use (TFLite / Core ML); very low energy"},
+  {name:"EfficientNet-B0", sub:"Google · scalable CNN", r:[5,4,4,3],
+   f:["5.3M params · 0.39 GFLOPs","77.1% ImageNet top-1","Fast; good edge option","Grad-CAM saliency maps"],
+   o:"Best accuracy per parameter; family scales B0 to B7"},
+  {name:"EfficientNet-B7", sub:"Google · scalable CNN", r:[3,5,1,3],
+   f:["66M params · 37 GFLOPs","84.3% ImageNet top-1","~100× B0's compute; 600 px input","Grad-CAM saliency maps"],
+   o:"For offline or batch jobs where accuracy dominates; GPU required"},
+  {d:"Tabular Data", cls:"d-tab"},
+  {name:"XGBoost", sub:"Gradient-boosted trees", r:[4,5,4,5],
+   f:["Typically KB to tens of MB","State of the art on many tabular benchmarks","Microseconds to ms per row (CPU)","Exact TreeSHAP and feature importance"],
+   o:"Mature ecosystem; strong regularisation; GPU training"},
+  {name:"LightGBM", sub:"Microsoft · boosted trees", r:[4,5,5,5],
+   f:["Compact histogram-based trees","On par with XGBoost","Fastest training and inference","Exact TreeSHAP and feature importance"],
+   o:"Scales to very large datasets; native categorical handling"},
+  {name:"Random Forest", sub:"Bagged trees", r:[2,4,3,4],
+   f:["Deep forests can reach hundreds of MB","Strong, a little below boosting","Slower with many deep trees","Feature importance; TreeSHAP"],
+   o:"Minimal tuning; robust baseline; easy to parallelise"}
+];
+const CRIT = ["Size","Accuracy","Speed","Explainability"];
+
+function level(v){return v>=4?"good":v===3?"mid":"bad"}
+function label(v){return v>=4?"Strong":v===3?"Moderate":"Weak"}
+function dots(v){return "●".repeat(v)+"○".repeat(5-v)}
+
+// ---- Build matrix ----
+const body=document.getElementById("matrixBody");
+let html="";
+MODELS.forEach(m=>{
+  if(m.d){html+=`<tr class="domain-row"><td colspan="7"><span class="pill ${m.cls}">${m.d}</span></td></tr>`;return;}
+  const avg=(m.r.reduce((a,b)=>a+b,0)/4);
+  html+=`<tr><td class="model"><b>${m.name}</b><small>${m.sub}</small></td>`;
+  m.r.forEach((v,i)=>{
+    html+=`<td><div class="cell"><span class="rate ${level(v)}" aria-label="${CRIT[i]}: ${v} of 5, ${label(v)}"><span class="dots" aria-hidden="true">${dots(v)}</span>${label(v)}</span><span class="fact">${m.f[i]}</span></div></td>`;
+  });
+  html+=`<td><span class="fact">${m.o}</span></td><td class="score"><span class="rate ${level(Math.round(avg))}">${avg.toFixed(1)}</span></td></tr>`;
+});
+body.innerHTML=html;
+
+// ---- Weighting ----
+const sliders=[0,1,2,3].map(i=>document.getElementById("w"+i));
+const outs=[0,1,2,3].map(i=>document.getElementById("o"+i));
+function update(){
+  const w=sliders.map(s=>+s.value);
+  w.forEach((v,i)=>outs[i].textContent=v);
+  const total=w.reduce((a,b)=>a+b,0)||1;
+  let domain=null, groups={};
+  MODELS.forEach(m=>{
+    if(m.d){domain=m.d;groups[domain]={cls:m.cls,list:[]};return;}
+    const s=m.r.reduce((a,v,i)=>a+v*w[i],0)/total;
+    groups[domain].list.push({name:m.name,s});
+  });
+  document.getElementById("winners").innerHTML=Object.entries(groups).map(([d,g])=>{
+    g.list.sort((a,b)=>b.s-a.s);
+    const best=g.list[0];
+    const rest=g.list.slice(1).map(x=>`${x.name} ${x.s.toFixed(1)}`).join(" · ");
+    return `<div class="winner"><span class="pill ${g.cls}">${d}</span><div class="k" style="margin-top:8px">Top pick</div><div class="v">${best.name} <span style="color:var(--muted);font-weight:500;font-size:15px">${best.s.toFixed(2)} / 5</span></div><div class="bar" style="width:${best.s/5*100}%"></div><div class="fact" style="margin-top:8px">Runners-up: ${rest}</div></div>`;
+  }).join("");
+}
+sliders.forEach(s=>s.addEventListener("input",()=>{document.querySelectorAll(".presets button").forEach(b=>b.classList.remove("on"));update();}));
+document.querySelectorAll(".presets button").forEach(b=>b.addEventListener("click",()=>{
+  b.dataset.w.split(",").forEach((v,i)=>sliders[i].value=v);
+  document.querySelectorAll(".presets button").forEach(x=>x.classList.remove("on"));b.classList.add("on");update();
+}));
+update();
+</script>
+</body>
+</html>
